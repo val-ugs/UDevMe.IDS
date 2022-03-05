@@ -273,13 +273,13 @@ namespace ConsoleApp
 
         private static void PrintTrafficFaturesFromCsvDatabase()
         {
-            string csvFile;
+            string csvFileName;
             Console.Write("-- Please enter an input csv file name: ");
-            csvFile = Console.ReadLine();
+            csvFileName = Console.ReadLine();
 
             List<List<object>> featuresList = new List<List<object>>();
 
-            using (var reader = new StreamReader(csvFile))
+            using (var reader = new StreamReader(csvFileName))
             {
                 while (!reader.EndOfStream)
                 {
