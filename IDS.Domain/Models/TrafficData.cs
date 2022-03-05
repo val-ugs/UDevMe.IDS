@@ -8,6 +8,11 @@ namespace IDS.Domain.Models
 {
     public class TrafficData
     {
-        public List<string> Data { get; set; }
+        public TrafficData()
+        {
+            Features = new List<List<double>>();
+        }
+
+        public List<List<double>> Features { get; set; }
     }
 }
