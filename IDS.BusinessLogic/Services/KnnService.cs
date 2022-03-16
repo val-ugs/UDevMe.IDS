@@ -10,51 +10,99 @@ namespace IDS.BusinessLogic.Services
 {
     public class KnnService : IKnnService
     {
-        public List<int> Predict(TrafficData trainTrafficData, TrafficData testTrafficData, int numNeighbors)
+        public class Neighbor
         {
-            List<int> predictions = new List<int>();
-            foreach (Sample testSample in testTrafficData.Samples)
+            public Neighbor(Sample sample)
             {
-                List<Sample> neighbors = GetNeighbors(trainTrafficData, testSample, numNeighbors);
-                List<double> labels = new List<double>();
-                foreach (Sample neighbor in neighbors)
-                    labels.Add(neighbor.Label); // Get label from neigbor
-                predictions.Add((int)labels.GroupBy(x => x).OrderByDescending(x => x.Count()).First().Key);
+                Sample = sample;
             }
 
-            return predictions;
-        }
-
-        private List<Sample> GetNeighbors(TrafficData trainTrafficData, Sample testSample, int numNeighbors)
-        {
-            Dictionary<int, double> distances = new Dictionary<int, double>();
-            List<Sample> neighbors = new List<Sample>();
-            int index = 0;
-            foreach (Sample trainSample in trainTrafficData.Samples)
-            {
-                double distance = EuclideanDistance(testSample, trainSample);
-                distances[index] = distance;
-                index++;
-            }
-
-            var sortedDistances = from entry in distances orderby entry.Value ascending select entry;
+            public Sample Sample { get; set; }
+            public double Distance { get; set; }
+            public double Weight { get; set; }
             
-            for (int i = 0; i < numNeighbors; i++)
-                neighbors.Add(trainTrafficData.Samples[sortedDistances.ElementAt(i).Key]);
-
-            return neighbors;
         }
 
-        private double EuclideanDistance(Sample testSample, Sample trainSample)
+        public class Knn
         {
-            double distance = 0;
+            private TrafficData _trainTrafficData;
+            private int _numberOfNeighbors;
 
-            for (int i = 0; i < testSample.Features.Count; i++)
+            public Knn(TrafficData trainTrafficData, int numberOfNeighbors)
             {
-                distance += Math.Pow((testSample.Features[i] - trainSample.Features[i]), 2);
+                _trainTrafficData = trainTrafficData;
+                _numberOfNeighbors = numberOfNeighbors;
             }
 
-            return Math.Sqrt(distance);
+            public List<int> Predict(TrafficData testTrafficData)
+            {
+                List<int> predictions = new List<int>();
+                foreach (Sample testSample in testTrafficData.Samples)
+                {
+                    List<Neighbor> neighbors = GetNeighbors(testSample);
+                    MakeWeights(neighbors);
+
+                    predictions.Add(CalculateLabel(neighbors));
+                }
+
+                return predictions;
+            }
+
+            private List<Neighbor> GetNeighbors(Sample testSample)
+            {
+                List<Neighbor> neighbors = new List<Neighbor>();
+
+                foreach (Sample trainSample in _trainTrafficData.Samples)
+                {
+                    Neighbor neighbor = new Neighbor(trainSample);
+                    neighbor.Distance = EuclideanDistance(testSample, trainSample);
+                    neighbors.Add(neighbor);
+                }
+
+                List<Neighbor> nearestNeighbors = neighbors.OrderBy(n => n.Distance).Take(_numberOfNeighbors).ToList();
+
+                return nearestNeighbors;
+            }
+
+            private double EuclideanDistance(Sample testSample, Sample trainSample)
+            {
+                double distance = 0;
+
+                for (int i = 0; i < testSample.Features.Count; i++)
+                {
+                    distance += Math.Pow((testSample.Features[i] - trainSample.Features[i]), 2);
+                }
+
+                return Math.Sqrt(distance);
+            }
+
+            private void MakeWeights(List<Neighbor> neighbors, double constant = 0.1)
+            {
+                foreach (Neighbor neighbor in neighbors)
+                {
+                    neighbor.Weight = 1 / (neighbor.Distance + constant);
+                }
+            }
+
+            private int CalculateLabel(List<Neighbor> neighbors)
+            {
+                double label = 0;
+                double totalWeight = 0;
+                foreach (Neighbor neighbor in neighbors)
+                {
+                    label += neighbor.Weight * neighbor.Sample.Label;
+                    totalWeight += neighbor.Weight;
+                }
+
+                return (int)Math.Round((label / totalWeight), MidpointRounding.AwayFromZero);
+            }
+        }
+
+        public List<int> Predict(TrafficData trainTrafficData, TrafficData testTrafficData, int numberOfNeighbors)
+        {
+            Knn knn = new Knn(trainTrafficData, numberOfNeighbors);
+
+            return knn.Predict(testTrafficData);
         }
     }
 }

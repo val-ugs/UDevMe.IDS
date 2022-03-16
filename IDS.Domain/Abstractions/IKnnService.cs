@@ -9,6 +9,6 @@ namespace IDS.Domain.Abstractions
 {
     public interface IKnnService
     {
-        public List<int> Predict(TrafficData trainTrafficData, TrafficData testTrafficData, int numNeighbors);
+        public List<int> Predict(TrafficData trainTrafficData, TrafficData testTrafficData, int numberOfNeighbors);
     }
 }

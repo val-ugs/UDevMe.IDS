@@ -65,8 +65,8 @@ namespace IDS.Tests
                 }
             }
 
-            trainTrafficData.Samples = trainTrafficData.Samples.Take(5000).ToList();
-            testTrafficData.Samples = testTrafficData.Samples.Take(5000).ToList();
+            trainTrafficData.Samples = trainTrafficData.Samples.Take(1000).ToList();
+            testTrafficData.Samples = testTrafficData.Samples.Take(1000).ToList();
             trueLabels = testTrafficData.Samples.Select(s => s.Label).ToList();
 
             trainTrafficData.Samples = _normalizeService.NormalizeTrainSamples(trainTrafficData.Samples, 0, 1);
