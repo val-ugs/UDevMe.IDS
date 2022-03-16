@@ -13,26 +13,26 @@ namespace IDS.BusinessLogic.Services
         public List<int> Predict(TrafficData trainTrafficData, TrafficData testTrafficData, int numNeighbors)
         {
             List<int> predictions = new List<int>();
-            foreach (List<double> testFeaturesRow in testTrafficData.Features)
+            foreach (Sample testSample in testTrafficData.Samples)
             {
-                List<List<double>> neighbors = GetNeighbors(trainTrafficData, testFeaturesRow, numNeighbors);
+                List<Sample> neighbors = GetNeighbors(trainTrafficData, testSample, numNeighbors);
                 List<double> labels = new List<double>();
-                foreach (List<double> neighbor in neighbors)
-                    labels.Add(neighbor[neighbor.Count - 1]); // Get label from neigbor
+                foreach (Sample neighbor in neighbors)
+                    labels.Add(neighbor.Label); // Get label from neigbor
                 predictions.Add((int)labels.GroupBy(x => x).OrderByDescending(x => x.Count()).First().Key);
             }
 
             return predictions;
         }
 
-        private List<List<double>> GetNeighbors(TrafficData trainTrafficData, List<double> testFeaturesRow, int numNeighbors)
+        private List<Sample> GetNeighbors(TrafficData trainTrafficData, Sample testSample, int numNeighbors)
         {
             Dictionary<int, double> distances = new Dictionary<int, double>();
-            List<List<double>> neighbors = new List<List<double>>();
+            List<Sample> neighbors = new List<Sample>();
             int index = 0;
-            foreach (List<double> trainFeaturesRow in trainTrafficData.Features)
+            foreach (Sample trainSample in trainTrafficData.Samples)
             {
-                double distance = EuclideanDistance(testFeaturesRow, trainFeaturesRow);
+                double distance = EuclideanDistance(testSample, trainSample);
                 distances[index] = distance;
                 index++;
             }
@@ -40,18 +40,18 @@ namespace IDS.BusinessLogic.Services
             var sortedDistances = from entry in distances orderby entry.Value ascending select entry;
             
             for (int i = 0; i < numNeighbors; i++)
-                neighbors.Add(new List<double>(trainTrafficData.Features[sortedDistances.ElementAt(i).Key]));
+                neighbors.Add(trainTrafficData.Samples[sortedDistances.ElementAt(i).Key]);
 
             return neighbors;
         }
 
-        private double EuclideanDistance(List<double> row1, List<double> row2)
+        private double EuclideanDistance(Sample testSample, Sample trainSample)
         {
             double distance = 0;
 
-            for (int i = 0; i < row1.Count - 1; i++)
+            for (int i = 0; i < testSample.Features.Count; i++)
             {
-                distance += Math.Pow((row1[i] - row2[i]), 2);
+                distance += Math.Pow((testSample.Features[i] - trainSample.Features[i]), 2);
             }
 
             return Math.Sqrt(distance);
