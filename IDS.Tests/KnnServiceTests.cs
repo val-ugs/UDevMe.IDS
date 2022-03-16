@@ -10,6 +10,7 @@ namespace IDS.Tests
     public class KnnServiceTests
     {
         private ConvertToTrafficFeaturesService _convertService;
+        private NormalizeFeaturesService _normalizeService;
         private KnnService _algorithmService;
         private AccuracyMetricService _metricService;
 
@@ -17,6 +18,7 @@ namespace IDS.Tests
         public void Setup()
         {
             _convertService = new ConvertToTrafficFeaturesService();
+            _normalizeService = new NormalizeFeaturesService();
             _algorithmService = new KnnService();
             _metricService = new AccuracyMetricService();
         }
@@ -44,7 +46,8 @@ namespace IDS.Tests
 
                     List<double> features =  _convertService.ConvertFromUnswData(values);
 
-                    trainTrafficData.Features.Add(features.ToList());
+                    trainTrafficData.Samples.Add( new Sample(features.Take(features.Count - 1).ToList(),
+                                                             (int)features[features.Count - 1]));
                 }
             }
             using (var reader = new StreamReader(testCsvFileName))
@@ -57,14 +60,17 @@ namespace IDS.Tests
 
                     List<double> features = _convertService.ConvertFromUnswData(values); // last feature is label
 
-                    trueLabels.Add((int)features[features.Count - 1]);
-                    testTrafficData.Features.Add(features.ToList());
+                    testTrafficData.Samples.Add(new Sample(features.Take(features.Count - 1).ToList(),
+                                                             (int)features[features.Count - 1]));
                 }
             }
 
-            trueLabels = trueLabels.Take(5000).ToList();
-            trainTrafficData.Features = trainTrafficData.Features.Take(5000).ToList();
-            testTrafficData.Features = testTrafficData.Features.Take(5000).ToList();
+            trainTrafficData.Samples = trainTrafficData.Samples.Take(5000).ToList();
+            testTrafficData.Samples = testTrafficData.Samples.Take(5000).ToList();
+            trueLabels = testTrafficData.Samples.Select(s => s.Label).ToList();
+
+            trainTrafficData.Samples = _normalizeService.NormalizeTrainSamples(trainTrafficData.Samples, 0, 1);
+            testTrafficData.Samples = _normalizeService.NormalizeTestSamples(testTrafficData.Samples);
 
             // act
             var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numNeighbors);
