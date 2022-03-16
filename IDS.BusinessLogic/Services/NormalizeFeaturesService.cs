@@ -69,25 +69,5 @@ namespace IDS.BusinessLogic.Services
 
             return normalizeValue;
         }
-
-        /*public List<Sample> NormalizeSamples(List<Sample> samples, int min, int max)
-        {
-            for (int i = 0; i < samples.Count; i++)
-            {
-                samples[i].Features = Normalize(samples[i].Features, min, max).ToList();
-            }
-
-            return samples;
-        }
-
-        public IEnumerable<double> Normalize(IEnumerable<double> features, int min, int max)
-        {
-            double featureMax = features.Max();
-            double featureMin = features.Min();
-            double range = featureMax - featureMin;
-
-            return features.Select(f => (f - featureMin) / range)
-                       .Select(n => ((1 - n) * min + n * max));
-        }*/
     }
 }
