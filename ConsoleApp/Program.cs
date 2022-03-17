@@ -37,15 +37,15 @@ namespace ConsoleApp
                 switch (option)
                 {
                     case 1:
-                        PrintTrafficFaturesFromInterface();
+                        PrintTrafficFeaturesFromInterface();
                         isCorrectOption = true;
                         break;
                     case 2:
-                        PrintTrafficFaturesFromCaptureFile();
+                        PrintTrafficFeaturesFromCaptureFile();
                         isCorrectOption = true;
                         break;
                     case 3:
-                        PrintTrafficFaturesFromCsvDatabase();
+                        PrintTrafficFeaturesFromCsvDatabase();
                         isCorrectOption = true;
                         break;
                     case 4:
@@ -59,7 +59,7 @@ namespace ConsoleApp
 
         }
 
-        private static void PrintTrafficFaturesFromInterface()
+        private static void PrintTrafficFeaturesFromInterface()
         {
             /* Retrieve the device list */
             var devices = CaptureDeviceList.Instance;
@@ -226,7 +226,7 @@ namespace ConsoleApp
             }
         }
 
-        private static void PrintTrafficFaturesFromCaptureFile()
+        private static void PrintTrafficFeaturesFromCaptureFile()
         {
             // read the file from stdin or from the command line arguments
             string capFile;
@@ -271,7 +271,7 @@ namespace ConsoleApp
             Console.ReadLine();
         }
 
-        private static void PrintTrafficFaturesFromCsvDatabase()
+        private static void PrintTrafficFeaturesFromCsvDatabase()
         {
             string csvFileName;
             Console.Write("-- Please enter an input csv file name: ");
