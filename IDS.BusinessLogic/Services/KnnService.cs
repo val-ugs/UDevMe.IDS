@@ -59,6 +59,7 @@ namespace IDS.BusinessLogic.Services
                     neighbors.Add(neighbor);
                 }
 
+                // Sort distances in ascending order and take n neighbors
                 List<Neighbor> nearestNeighbors = neighbors.OrderBy(n => n.Distance).Take(_numberOfNeighbors).ToList();
 
                 return nearestNeighbors;
@@ -86,15 +87,15 @@ namespace IDS.BusinessLogic.Services
 
             private int CalculateLabel(List<Neighbor> neighbors)
             {
-                double label = 0;
+                double labelWeight = 0;
                 double totalWeight = 0;
                 foreach (Neighbor neighbor in neighbors)
                 {
-                    label += neighbor.Weight * neighbor.Sample.Label;
+                    labelWeight += neighbor.Weight * neighbor.Sample.Label;
                     totalWeight += neighbor.Weight;
                 }
 
-                return (int)Math.Round((label / totalWeight), MidpointRounding.AwayFromZero);
+                return (int)Math.Round((labelWeight / totalWeight), MidpointRounding.AwayFromZero);
             }
         }
 
