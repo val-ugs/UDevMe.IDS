@@ -80,16 +80,6 @@ namespace IDS.BusinessLogic.Services
                 }
             }
         }
-
-        //Next Methods for SGDOptimizer
-        public void IterationEnds(double timeStep) { }
-
-        public bool TriggerStopping(string msg, bool verbose)
-        {
-            if (verbose)
-                Console.WriteLine(msg + "Stopping");
-            return true;
-        }
     }
 
     public class AdamOptimizer : BaseStochasticOptimizer
@@ -319,8 +309,6 @@ namespace IDS.BusinessLogic.Services
             while (it < maxIterations && loss > tol)
             {
                 double accumulatedLoss = 0;
-                //if (_shuffle)
-                //    Shuffle(samples, trueLabels);
                 foreach (List<Sample> batchSlice in GenerateBatches(samples))
                 {
                     int batchSize = batchSlice.Count;
@@ -585,17 +573,6 @@ namespace IDS.BusinessLogic.Services
             if (_labelType == LabelType.Multiclass)
                 return Softmax(x);
             throw new Exception("It's not binary or multiclass. Check the number of unique labels.");
-        }
-
-        private double[] LogisticDeravative(double[] x)
-        {
-            double[] p = new double[x.Length];
-            for (int i = 0; i < x.Length; i++)
-            {
-                p[i] = LogisticFunction(x[i]) * (1 - LogisticFunction(x[i]));
-            }
-
-            return p;
         }
 
         private double[] Logistic(double[] x)
