@@ -27,11 +27,14 @@ namespace IDS.BusinessLogic.Services
         {
             private TrafficData _trainTrafficData;
             private int _numberOfNeighbors;
+            private List<int> _distinctLabels;
 
             public Knn(TrafficData trainTrafficData, int numberOfNeighbors)
             {
                 _trainTrafficData = trainTrafficData;
                 _numberOfNeighbors = numberOfNeighbors;
+
+                _distinctLabels = trainTrafficData.Samples.Select(s => s.Label).Distinct().ToList();
             }
 
             public List<int> Predict(TrafficData testTrafficData)
@@ -87,15 +90,20 @@ namespace IDS.BusinessLogic.Services
 
             private int CalculateLabel(List<Neighbor> neighbors)
             {
-                double labelWeight = 0;
-                double totalWeight = 0;
+                List<double> labelWeights = new List<double>(new double[_distinctLabels.Count]);
                 foreach (Neighbor neighbor in neighbors)
                 {
-                    labelWeight += neighbor.Weight * neighbor.Sample.Label;
-                    totalWeight += neighbor.Weight;
+                    for (int i = 0; i < _distinctLabels.Count; i++)
+                    {
+                        if (neighbor.Sample.Label == _distinctLabels[i])
+                            labelWeights[i] += neighbor.Weight;
+                    }
                 }
 
-                return (int)Math.Round((labelWeight / totalWeight), MidpointRounding.AwayFromZero);
+                // Get max label index based on weights
+                int labelIndex = labelWeights.IndexOf(labelWeights.Max());
+
+                return _distinctLabels[labelIndex];
             }
         }
 
