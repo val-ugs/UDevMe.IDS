@@ -12,7 +12,8 @@ namespace IDS.Tests
         private ConvertToTrafficFeaturesService _convertService;
         private NormalizeFeaturesService _normalizeService;
         private KnnService _algorithmService;
-        private AccuracyMetricService _metricService;
+        private AccuracyMetricService _acuraccyMetricService;
+        private F1ScoreMetricService _f1ScoreMetricService;
 
         [SetUp]
         public void Setup()
@@ -20,7 +21,8 @@ namespace IDS.Tests
             _convertService = new ConvertToTrafficFeaturesService();
             _normalizeService = new NormalizeFeaturesService();
             _algorithmService = new KnnService();
-            _metricService = new AccuracyMetricService();
+            _acuraccyMetricService = new AccuracyMetricService();
+            _f1ScoreMetricService = new F1ScoreMetricService();
         }
 
         [Test]
@@ -31,7 +33,7 @@ namespace IDS.Tests
             string testCsvFileName = "UNSW_NB15_training-set.csv";
             TrafficData trainTrafficData = new TrafficData();
             TrafficData testTrafficData = new TrafficData();
-            int numNeighbors = 3;
+            int numberOfNeighbors = 3;
 
             List<int> trueLabels = new List<int>();
 
@@ -73,11 +75,13 @@ namespace IDS.Tests
             testTrafficData.Samples = _normalizeService.NormalizeTestSamples(testTrafficData.Samples);
 
             // act
-            var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numNeighbors);
-            var accuracy = _metricService.Calculate(trueLabels, result);
+            var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numberOfNeighbors);
+            var accuracy = _acuraccyMetricService.Calculate(trueLabels, result);
+            var f1Score = _f1ScoreMetricService.Calculate(trueLabels, result);
 
             // assert
             Assert.IsTrue(accuracy >= 0.9);
+            Assert.IsTrue(f1Score >= 0.9);
         }
     }
 }

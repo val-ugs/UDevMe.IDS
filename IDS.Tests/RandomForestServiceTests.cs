@@ -15,7 +15,8 @@ namespace IDS.Tests
         private ConvertToTrafficFeaturesService _convertService;
         private NormalizeFeaturesService _normalizeService;
         private RandomForestService _algorithmService;
-        private AccuracyMetricService _metricService;
+        private AccuracyMetricService _acuraccyMetricService;
+        private F1ScoreMetricService _f1ScoreMetricService;
 
         [SetUp]
         public void Setup()
@@ -23,7 +24,8 @@ namespace IDS.Tests
             _convertService = new ConvertToTrafficFeaturesService();
             _normalizeService = new NormalizeFeaturesService();
             _algorithmService = new RandomForestService();
-            _metricService = new AccuracyMetricService();
+            _acuraccyMetricService = new AccuracyMetricService();
+            _f1ScoreMetricService = new F1ScoreMetricService();
         }
 
         [Test]
@@ -81,10 +83,12 @@ namespace IDS.Tests
             // act
             var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numTrees,
                                                    maxDepth, minSize, partOfTrafficDataRatio);
-            var accuracy = _metricService.Calculate(trueLabels, result);
+            var accuracy = _acuraccyMetricService.Calculate(trueLabels, result);
+            var f1Score = _f1ScoreMetricService.Calculate(trueLabels, result);
 
             // assert
             Assert.IsTrue(accuracy >= 0.9);
+            Assert.IsTrue(f1Score >= 0.9);
         }
     }
 }

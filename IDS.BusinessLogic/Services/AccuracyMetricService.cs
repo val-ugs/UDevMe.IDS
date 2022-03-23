@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace IDS.BusinessLogic.Services
 {
-    public class AccuracyMetricService : IAccuracyMetricService
+    public class AccuracyMetricService : IMetricService
     {
-        public float Calculate(List<int> trueLabels, List<int> predictedLabels)
+        public double Calculate(List<int> trueLabels, List<int> predictedLabels)
         {
             if (trueLabels.Count != predictedLabels.Count)
                 return 0;

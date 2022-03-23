@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace IDS.Domain.Abstractions
 {
-    public interface IAccuracyMetricService
+    public interface IMetricService
     {
-        float Calculate(List<int> trueLabels, List<int> predictedLabels);
+        double Calculate(List<int> trueLabels, List<int> predictedLabels);
     }
 }
