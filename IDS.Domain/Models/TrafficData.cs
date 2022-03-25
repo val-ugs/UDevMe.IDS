@@ -10,7 +10,7 @@ namespace IDS.Domain.Models
     {
         public Sample() { }
 
-        public Sample(List<double> features, int label)
+        public Sample(List<double> features, int label = -1)
         {
             Features = features;
             Label = label;
@@ -21,9 +21,9 @@ namespace IDS.Domain.Models
 
     public class TrafficData
     {
-        public TrafficData()
+        public TrafficData(int numberOfSamples)
         {
-            Samples = new List<Sample>();
+            Samples = new List<Sample>(numberOfSamples);
         }
 
         public List<Sample> Samples { get; set; }

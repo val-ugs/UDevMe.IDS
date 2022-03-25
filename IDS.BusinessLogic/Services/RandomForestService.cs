@@ -206,8 +206,8 @@ namespace IDS.BusinessLogic.Services
 
         private TrafficData GetPartOfTrainTrafficData(TrafficData trainTrafficData, double partOfTrafficDataRatio)
         {
-            TrafficData partOfTrafficData = new TrafficData();
             int n = (int)Math.Round(trainTrafficData.Samples.Count * partOfTrafficDataRatio);
+            TrafficData partOfTrafficData = new TrafficData(n);
             Random rand = new Random();
 
             while (partOfTrafficData.Samples.Count < n)

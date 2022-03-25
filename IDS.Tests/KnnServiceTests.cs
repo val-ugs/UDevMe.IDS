@@ -9,7 +9,7 @@ namespace IDS.Tests
 {
     public class KnnServiceTests
     {
-        private ConvertToTrafficFeaturesService _convertService;
+        private TrafficDataConverterService _convertService;
         private NormalizeFeaturesService _normalizeService;
         private KnnService _algorithmService;
         private AccuracyMetricService _acuraccyMetricService;
@@ -18,7 +18,7 @@ namespace IDS.Tests
         [SetUp]
         public void Setup()
         {
-            _convertService = new ConvertToTrafficFeaturesService();
+            _convertService = new TrafficDataConverterService();
             _normalizeService = new NormalizeFeaturesService();
             _algorithmService = new KnnService();
             _acuraccyMetricService = new AccuracyMetricService();
@@ -31,41 +31,41 @@ namespace IDS.Tests
             // arrange
             string trainCsvFileName = "UNSW_NB15_training-set.csv";
             string testCsvFileName = "UNSW_NB15_training-set.csv";
-            TrafficData trainTrafficData = new TrafficData();
-            TrafficData testTrafficData = new TrafficData();
             int numberOfNeighbors = 3;
 
             List<int> trueLabels = new List<int>();
 
+            List<string[]> trainData = new List<string[]>();
+
             using (var reader = new StreamReader(trainCsvFileName))
             {
-                string headerLine = reader.ReadLine();
+                string headerRow = reader.ReadLine();
                 while (!reader.EndOfStream)
                 {
+                    string dataRow = reader.ReadLine();
+                    string[] dataMembers = dataRow.Split(',');
 
-                    var line = reader.ReadLine();
-                    var values = line.Split(',');
-
-                    List<double> features =  _convertService.ConvertFromUnswData(values);
-
-                    trainTrafficData.Samples.Add( new Sample(features.Take(features.Count - 1).ToList(),
-                                                             (int)features[features.Count - 1]));
+                    trainData.Add(dataMembers);
                 }
             }
+
+            TrafficData trainTrafficData = _convertService.ConvertTrainData(trainData, DataSource.Unsw, ClassificationType.Binary, true);
+
+            List<string[]> testData = new List<string[]>();
+
             using (var reader = new StreamReader(testCsvFileName))
             {
-                string headerLine = reader.ReadLine();
+                string headerRow = reader.ReadLine();
                 while (!reader.EndOfStream)
                 {
-                    var line = reader.ReadLine();
-                    var values = line.Split(',');
+                    string dataRow = reader.ReadLine();
+                    string[] dataMembers = dataRow.Split(',');
 
-                    List<double> features = _convertService.ConvertFromUnswData(values); // last feature is label
-
-                    testTrafficData.Samples.Add(new Sample(features.Take(features.Count - 1).ToList(),
-                                                             (int)features[features.Count - 1]));
+                    testData.Add(dataMembers);
                 }
             }
+
+            TrafficData testTrafficData = _convertService.ConvertTestData(testData);
 
             trainTrafficData.Samples = trainTrafficData.Samples.Take(1000).ToList();
             testTrafficData.Samples = testTrafficData.Samples.Take(1000).ToList();
