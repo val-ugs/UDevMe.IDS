@@ -1,4 +1,5 @@
 using IDS.BusinessLogic.Services;
+using IDS.DataAccess.CSV;
 using IDS.Domain.Models;
 using NUnit.Framework;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ namespace IDS.Tests
 {
     public class KnnServiceTests
     {
+        private DataService _dataService;
         private TrafficDataConverterService _convertService;
         private NormalizeFeaturesService _normalizeService;
         private KnnService _algorithmService;
@@ -18,6 +20,10 @@ namespace IDS.Tests
         [SetUp]
         public void Setup()
         {
+            DataRepository csvDataRepository = new DataRepository(
+                new CsvSettings("..\\..\\..\\..\\IDS.DataAccess.CSV\\Data", ',')
+            );
+            _dataService = new DataService(csvDataRepository);
             _convertService = new TrafficDataConverterService();
             _normalizeService = new NormalizeFeaturesService();
             _algorithmService = new KnnService();
@@ -35,36 +41,10 @@ namespace IDS.Tests
 
             List<int> trueLabels = new List<int>();
 
-            List<string[]> trainData = new List<string[]>();
-
-            using (var reader = new StreamReader(trainCsvFileName))
-            {
-                string headerRow = reader.ReadLine();
-                while (!reader.EndOfStream)
-                {
-                    string dataRow = reader.ReadLine();
-                    string[] dataMembers = dataRow.Split(',');
-
-                    trainData.Add(dataMembers);
-                }
-            }
-
+            List<string[]> trainData = _dataService.GetData(trainCsvFileName, hasHeaderRow: true);
             TrafficData trainTrafficData = _convertService.ConvertTrainData(trainData, DataSource.Unsw, ClassificationType.Binary, true);
 
-            List<string[]> testData = new List<string[]>();
-
-            using (var reader = new StreamReader(testCsvFileName))
-            {
-                string headerRow = reader.ReadLine();
-                while (!reader.EndOfStream)
-                {
-                    string dataRow = reader.ReadLine();
-                    string[] dataMembers = dataRow.Split(',');
-
-                    testData.Add(dataMembers);
-                }
-            }
-
+            List<string[]> testData = _dataService.GetData(testCsvFileName, hasHeaderRow: true);
             TrafficData testTrafficData = _convertService.ConvertTestData(testData);
 
             trainTrafficData.Samples = trainTrafficData.Samples.Take(1000).ToList();

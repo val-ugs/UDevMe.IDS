@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\IDS.BusinessLogic\IDS.BusinessLogic.csproj" />
+    <ProjectReference Include="..\IDS.DataAccess.CSV\IDS.DataAccess.CSV.csproj" />
   </ItemGroup>
 
 </Project>
