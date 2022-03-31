@@ -95,6 +95,8 @@ namespace IDS.BusinessLogic.Services
                     break;
                 case DataSource.Unsw:
                     return ConvertFromUnswData(data);
+                case DataSource.Kdd:
+                    return ConvertFromKddData(data);
             }
 
             return null;
@@ -109,6 +111,35 @@ namespace IDS.BusinessLogic.Services
             {
                 "Fuzzers", "Analysis", "Backdoor", "DoS", "Exploits",
                 "Generic", "Reconnaissance", "Shellcode", "Worms"
+            };
+
+            foreach (string[] dataRow in data)
+            {
+                List<double> features = GetFeaturesFromDataRow(dataRow, 0, dataRow.Length - 2);
+                int label = GetLabelFromDataRow(dataRow, dataRow.Length - 2, nameWithoutAttacks, nameOfAttacks);
+
+                trafficData.Samples.Add(new Sample(features, label));
+            }
+
+            return trafficData;
+        }
+
+        private TrafficData ConvertFromKddData(List<string[]> data)
+        {
+            TrafficData trafficData = new TrafficData(data.Count);
+
+            string nameWithoutAttacks = "Normal";
+            List<string> nameOfAttacks = new List<string>
+            {
+                // DoS
+                "Back", "Land", "Neptune", "Pod", "Smurf", "Teardrop", "Apache2", "Udpstorm", "Processtable", "Worm", "Mailbomb",
+                // Probe
+                "Satan", "Ipsweep", "Nmap", "Portsweep", "Mscan", "Saint",
+                // R2L
+                "Guess_passwd", "Ftp_write", "Imap", "Phf", "Multihop", "Warezmaster", "Warezclient", "Spy",
+                "Xlock", "Xsnoop", "Snmpguess", "Snmpgetattack", "Httptunnel", "Sendmail", "Named",
+                // U2R
+                "Buffer_overflow", "Loadmodule", "Rootkit", "Perl", "Sqlattack", "Xterm", "Ps"
             };
 
             foreach (string[] dataRow in data)
@@ -173,11 +204,11 @@ namespace IDS.BusinessLogic.Services
 
         private int GetLabelByNames(string labelName, string nameWithoutAttacks, List<string> nameOfAttacks)
         {
-            if (labelName == nameWithoutAttacks)
+            if (labelName.ToUpper() == nameWithoutAttacks.ToUpper())
                 return 0;
 
             for (int i = 1; i <= nameOfAttacks.Count; i++)
-                if (labelName == nameOfAttacks[i - 1])
+                if (labelName.ToUpper() == nameOfAttacks[i - 1].ToUpper())
                     return _classificationType switch
                     {
                         ClassificationType.Binary => 1,

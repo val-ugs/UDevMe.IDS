@@ -9,6 +9,7 @@ namespace IDS.Domain.Models
     public enum DataSource
     {
         RealTime,
-        Unsw
+        Unsw,
+        Kdd
     }
 }
