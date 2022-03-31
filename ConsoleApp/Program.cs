@@ -114,6 +114,9 @@ namespace ConsoleApp
         {
             var time = e.Header.Timeval.Date;
             var len = e.Data.Length;
+
+            Console.WriteLine("Time: " + time + "\nLen: " + len);
+
             var rawPacket = e.GetPacket();
 
             var packet = PacketDotNet.Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
