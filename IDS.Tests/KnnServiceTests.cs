@@ -32,7 +32,7 @@ namespace IDS.Tests
         }
 
         [Test]
-        public void Predict__ShouldReturnTrue()
+        public void Predict_UNSW_ShouldReturnTrue()
         {
             // arrange
             string trainCsvFileName = "UNSW_NB15_training-set.csv";
