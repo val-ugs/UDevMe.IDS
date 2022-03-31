@@ -17,7 +17,7 @@ namespace IDS.DataAccess.CSV
             _delimiter = csvSettings.Delimiter;
         }
 
-        public void AddRow(string fileName,double[] dataRow)
+        public void Create(string fileName, double[] dataRow)
         {
             string fullPath = _path + "\\" + fileName;
 
