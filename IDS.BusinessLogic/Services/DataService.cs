@@ -16,14 +16,9 @@ namespace IDS.BusinessLogic.Services
             _dataRepository = dataRepository;   
         }
 
-        public bool Create(string fileName, double[] dataRow)
+        public string[] GetFilenameList()
         {
-            bool isValid = dataRow != null;
-
-            if (isValid)
-                _dataRepository.Create(fileName, dataRow);
-
-            return isValid;
+            return _dataRepository.GetFilenameList();
         }
 
         public List<string[]> GetData(string fileName, bool hasHeaderRow = false)

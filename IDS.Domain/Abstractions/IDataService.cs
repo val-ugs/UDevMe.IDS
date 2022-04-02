@@ -9,7 +9,7 @@ namespace IDS.Domain.Abstractions
 {
     public interface IDataService
     {
-        public bool Create(string fileName, double[] dataRow);
+        public string[] GetFilenameList();
         public List<string[]> GetData(string fileName, bool hasHeaderRow);
     }
 }

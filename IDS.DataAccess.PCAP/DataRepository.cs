@@ -24,6 +24,11 @@ namespace IDS.DataAccess.PCAP
             _services = FillServices();
         }
 
+        public string[] GetFilenameList()
+        {
+            return Directory.GetFiles(_path).Select(file => Path.GetFileName(file)).ToArray();
+        }
+
         private Dictionary<(string, int), string> FillServices()
         {
             Dictionary<(string, int), string> services = new Dictionary<(string, int), string>();
@@ -48,11 +53,6 @@ namespace IDS.DataAccess.PCAP
             }
 
             return services;
-        }
-
-        public void Create(string fileName, double[] dataRow)
-        {
-            throw new NotImplementedException();
         }
 
         public List<string[]> GetData(string fileName, bool hasHeaderRow)

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace IDS.DataAccess.CSV
@@ -17,30 +18,9 @@ namespace IDS.DataAccess.CSV
             _delimiter = csvSettings.Delimiter;
         }
 
-        public void Create(string fileName, double[] dataRow)
+        public string[] GetFilenameList()
         {
-            string fullPath = _path + "\\" + fileName;
-
-            if (!File.Exists(fullPath))
-            {
-                File.Create(fullPath);
-            }
-            using (var writer = new StreamWriter(fullPath, true))
-            {
-                StringBuilder dataRowInCsv = new StringBuilder();
-
-                for (int i = 0; i < dataRow.Length; i++)
-                {
-                    string dataMember = Convert.ToString(dataRow[i]);
-                    if (i == dataRow.Length - 1)
-                        dataRowInCsv.Append($"{dataMember}\n");
-                    else
-                        dataRowInCsv.Append($"{dataMember}{_delimiter}");
-                }
-
-                writer.WriteLine(dataRowInCsv);
-            }
-            
+            return Directory.GetFiles(_path).Select(file => Path.GetFileName(file)).ToArray();
         }
 
         public List<string[]> GetData(string fileName, bool hasHeaderRow)

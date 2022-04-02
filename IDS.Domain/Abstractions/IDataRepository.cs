@@ -8,7 +8,7 @@ namespace IDS.Domain.Abstractions
 {
     public interface IDataRepository
     {
-        public void Create(string fileName, double[] dataRow);
+        public string[] GetFilenameList();
         public List<string[]> GetData(string fileName, bool hasHeaderRow);
     }
 }
