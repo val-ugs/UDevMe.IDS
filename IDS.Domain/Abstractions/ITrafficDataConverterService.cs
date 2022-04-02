@@ -9,8 +9,7 @@ namespace IDS.Domain.Abstractions
 {
     public interface ITrafficDataConverterService
     {
-        TrafficData ConvertTrainData(List<string[]> data, DataSource dataType,
-                                     ClassificationType classificationType, bool hasOneHotEncode);
+        TrafficData ConvertTrainData(List<string[]> data);
         TrafficData ConvertTestData(List<string[]> data);
     }
 }

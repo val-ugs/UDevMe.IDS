@@ -33,7 +33,7 @@ namespace IDS.Tests
         public void GetData_Pcap_ShouldReturnTrue()
         {
             // arrange
-            string pcapFile = "MyTraffic.pcapng";
+            string pcapFile = "REALTIME_myTraffic.pcapng";
 
             DataAccess.PCAP.DataRepository csvDataRepository = new DataAccess.PCAP.DataRepository(
                 "..\\..\\..\\..\\IDS.DataAccess.PCAP\\Data"

@@ -67,23 +67,24 @@ namespace IDS.BusinessLogic.Services
         private OneHotEncoder _oneHotEncoder;
         private DataSource? _dataSource;
         private ClassificationType? _classificationType;
+        private bool _hasOneHotEncode;
 
-        public TrafficData ConvertTrainData(List<string[]> data, DataSource dataSource,
-                                            ClassificationType classificationType, bool hasOneHotEncode)
+        public TrafficDataConverterService(DataSource dataSource, ClassificationType classificationType, bool hasOneHotEncode)
         {
-            if (hasOneHotEncode)
-                _oneHotEncoder = new OneHotEncoder(data);
             _dataSource = dataSource;
             _classificationType = classificationType;
+            _hasOneHotEncode = hasOneHotEncode;
+        }
+
+        public TrafficData ConvertTrainData(List<string[]> data)
+        {
+            if (_hasOneHotEncode)
+                _oneHotEncoder = new OneHotEncoder(data);
             return Convert(data);
         }
 
         public TrafficData ConvertTestData(List<string[]> data)
         {
-            if (_dataSource == null)
-                throw new Exception("Data type not set");
-            if (_classificationType == null)
-                throw new Exception("Classification type not set");
             return Convert(data);
         }
 
@@ -93,7 +94,6 @@ namespace IDS.BusinessLogic.Services
             {
                 case DataSource.RealTime:
                     return ConvertFromRealtimeData(data);
-                    break;
                 case DataSource.Unsw:
                     return ConvertFromUnswData(data);
                 case DataSource.Kdd:
@@ -184,7 +184,7 @@ namespace IDS.BusinessLogic.Services
                     features.Add(number);
                 else
                 {
-                    if (_oneHotEncoder != null)
+                    if (_hasOneHotEncode && _oneHotEncoder != null)
                         features.AddRange(_oneHotEncoder.Encode(i, dataRow[i]));
                 }
             }

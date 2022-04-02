@@ -14,7 +14,6 @@ namespace IDS.Tests
     public class MlpServiceTests
     {
         private DataService _dataService;
-        private TrafficDataConverterService _convertService;
         private NormalizeFeaturesService _normalizeService;
         private MlpService _algorithmService;
         private AccuracyMetricService _acuraccyMetricService;
@@ -27,7 +26,6 @@ namespace IDS.Tests
                 new CsvSettings("..\\..\\..\\..\\IDS.DataAccess.CSV\\Data", ',')
             );
             _dataService = new DataService(csvDataRepository);
-            _convertService = new TrafficDataConverterService();
             _normalizeService = new NormalizeFeaturesService();
             _algorithmService = new MlpService();
             _acuraccyMetricService = new AccuracyMetricService();
@@ -50,14 +48,15 @@ namespace IDS.Tests
             double beta_2 = 0.999;
             double epsilon = 0.00000001;
 
+            TrafficDataConverterService convertService = new TrafficDataConverterService(DataSource.Unsw, ClassificationType.Binary, true);
 
             List<int> trueLabels = new List<int>();
 
             List<string[]> trainData = _dataService.GetData(trainCsvFileName, hasHeaderRow: true);
-            TrafficData trainTrafficData = _convertService.ConvertTrainData(trainData, DataSource.Unsw, ClassificationType.Binary, true);
+            TrafficData trainTrafficData = convertService.ConvertTrainData(trainData);
 
             List<string[]> testData = _dataService.GetData(testCsvFileName, hasHeaderRow: true);
-            TrafficData testTrafficData = _convertService.ConvertTestData(testData);
+            TrafficData testTrafficData = convertService.ConvertTestData(testData);
 
             trainTrafficData.Samples = trainTrafficData.Samples.Take(500).ToList();
             testTrafficData.Samples = testTrafficData.Samples.Take(300).ToList();
@@ -94,14 +93,15 @@ namespace IDS.Tests
             double beta_2 = 0.999;
             double epsilon = 0.00000001;
 
+            TrafficDataConverterService convertService = new TrafficDataConverterService(DataSource.Kdd, ClassificationType.Binary, true);
 
             List<int> trueLabels = new List<int>();
 
             List<string[]> trainData = _dataService.GetData(trainCsvFileName, hasHeaderRow: true);
-            TrafficData trainTrafficData = _convertService.ConvertTrainData(trainData, DataSource.Kdd, ClassificationType.Binary, true);
+            TrafficData trainTrafficData = convertService.ConvertTrainData(trainData);
 
             List<string[]> testData = _dataService.GetData(testCsvFileName, hasHeaderRow: true);
-            TrafficData testTrafficData = _convertService.ConvertTestData(testData);
+            TrafficData testTrafficData = convertService.ConvertTestData(testData);
 
             trainTrafficData.Samples = trainTrafficData.Samples.Take(1000).ToList();
             testTrafficData.Samples = testTrafficData.Samples.Take(300).ToList();
