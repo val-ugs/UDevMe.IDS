@@ -92,6 +92,7 @@ namespace IDS.BusinessLogic.Services
             switch (_dataSource)
             {
                 case DataSource.RealTime:
+                    return ConvertFromRealtimeData(data);
                     break;
                 case DataSource.Unsw:
                     return ConvertFromUnswData(data);
@@ -100,6 +101,27 @@ namespace IDS.BusinessLogic.Services
             }
 
             return null;
+        }
+
+        private TrafficData ConvertFromRealtimeData(List<string[]> data)
+        {
+            TrafficData trafficData = new TrafficData(data.Count);
+
+            string nameWithoutAttacks = "Normal";
+            List<string> nameOfAttacks = data.Select(d => d[d.Length - 1])
+                                             .Distinct()
+                                             .Where(a => a.ToUpper() !=  nameWithoutAttacks.ToUpper()) // Remove Normal
+                                             .ToList();
+
+            foreach (string[] dataRow in data)
+            {
+                List<double> features = GetFeaturesFromDataRow(dataRow, 0, dataRow.Length - 1);
+                int label = GetLabelFromDataRow(dataRow, dataRow.Length - 1, nameWithoutAttacks, nameOfAttacks);
+
+                trafficData.Samples.Add(new Sample(features, label));
+            }
+
+            return trafficData;
         }
 
         private TrafficData ConvertFromUnswData(List<string[]> data)
