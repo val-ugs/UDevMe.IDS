@@ -77,7 +77,7 @@ namespace IDS.Tests
             // arrange
             string trainCsvFileName = "KDDTrain+.csv";
             string testCsvFileName = "KDDTest+.csv";
-            int numTrees = 3;
+            int numberOfTrees = 3;
             int maxDepth = 5;
             int minSize = 3;
             double partOfTrafficDataRatio = 0.5;
@@ -98,7 +98,7 @@ namespace IDS.Tests
             testTrafficData.Samples = _normalizeService.NormalizeTestSamples(testTrafficData.Samples);
 
             // act
-            var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numTrees,
+            var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numberOfTrees,
                                                    maxDepth, minSize, partOfTrafficDataRatio);
             var accuracy = _acuraccyMetricService.Calculate(trueLabels, result);
             var f1Score = _f1ScoreMetricService.Calculate(trueLabels, result);
