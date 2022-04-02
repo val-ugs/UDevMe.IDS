@@ -14,11 +14,15 @@ namespace IDS.BusinessLogic.Services
         double _min, _max; 
         double[] _maxValue, _minValue;
 
-        public List<Sample> NormalizeTrainSamples(List<Sample> samples, double min, double max)
+        public NormalizeFeaturesService(double min, double max)
         {
-            _featureCount = samples[0].Features.Count;
             _min = min;
             _max = max;
+        }
+
+        public List<Sample> NormalizeTrainSamples(List<Sample> samples)
+        {
+            _featureCount = samples[0].Features.Count;
             _maxValue = new double[_featureCount];
             _minValue = new double[_featureCount];
 

@@ -11,7 +11,6 @@ namespace IDS.Tests
     public class KnnServiceTests
     {
         private DataService _dataService;
-        private NormalizeFeaturesService _normalizeService;
         private KnnService _algorithmService;
         private AccuracyMetricService _acuraccyMetricService;
         private F1ScoreMetricService _f1ScoreMetricService;
@@ -23,7 +22,6 @@ namespace IDS.Tests
                 new CsvSettings("..\\..\\..\\..\\IDS.DataAccess.CSV\\Data", ',')
             );
             _dataService = new DataService(csvDataRepository);
-            _normalizeService = new NormalizeFeaturesService();
             _algorithmService = new KnnService();
             _acuraccyMetricService = new AccuracyMetricService();
             _f1ScoreMetricService = new F1ScoreMetricService();
@@ -38,6 +36,7 @@ namespace IDS.Tests
             int numberOfNeighbors = 3;
 
             TrafficDataConverterService convertService = new TrafficDataConverterService(DataSource.Unsw, ClassificationType.Binary, true);
+            NormalizeFeaturesService normalizeService = new NormalizeFeaturesService(0, 1);
 
             List<int> trueLabels = new List<int>();
 
@@ -51,8 +50,8 @@ namespace IDS.Tests
             testTrafficData.Samples = testTrafficData.Samples.Take(1000).ToList();
             trueLabels = testTrafficData.Samples.Select(s => s.Label).ToList();
 
-            trainTrafficData.Samples = _normalizeService.NormalizeTrainSamples(trainTrafficData.Samples, 0, 1);
-            testTrafficData.Samples = _normalizeService.NormalizeTestSamples(testTrafficData.Samples);
+            trainTrafficData.Samples = normalizeService.NormalizeTrainSamples(trainTrafficData.Samples);
+            testTrafficData.Samples = normalizeService.NormalizeTestSamples(testTrafficData.Samples);
 
             // act
             var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numberOfNeighbors);
@@ -73,6 +72,7 @@ namespace IDS.Tests
             int numberOfNeighbors = 3;
 
             TrafficDataConverterService convertService = new TrafficDataConverterService(DataSource.Kdd, ClassificationType.Binary, true);
+            NormalizeFeaturesService normalizeService = new NormalizeFeaturesService(0, 1);
 
             List<int> trueLabels = new List<int>();
 
@@ -86,8 +86,8 @@ namespace IDS.Tests
             testTrafficData.Samples = testTrafficData.Samples.Take(1000).ToList();
             trueLabels = testTrafficData.Samples.Select(s => s.Label).ToList();
 
-            trainTrafficData.Samples = _normalizeService.NormalizeTrainSamples(trainTrafficData.Samples, 0, 1);
-            testTrafficData.Samples = _normalizeService.NormalizeTestSamples(testTrafficData.Samples);
+            trainTrafficData.Samples = normalizeService.NormalizeTrainSamples(trainTrafficData.Samples);
+            testTrafficData.Samples = normalizeService.NormalizeTestSamples(testTrafficData.Samples);
 
             // act
             var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numberOfNeighbors);

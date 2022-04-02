@@ -9,7 +9,7 @@ namespace IDS.Domain.Abstractions
 {
     public interface INormalizeFeaturesService
     {
-        public List<Sample> NormalizeTrainSamples(List<Sample> samples, double min, double max);
+        public List<Sample> NormalizeTrainSamples(List<Sample> samples);
         public List<Sample> NormalizeTestSamples(List<Sample> samples);
     }
 }
