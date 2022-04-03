@@ -200,8 +200,16 @@ namespace IDS.BusinessLogic.Services
             Multiclass
         }
 
+        private List<int> _hiddenLayersWithNeurons;
         private double _alpha;
         private int _batchSize;
+        private double _learningRate;
+        private int _maxIterations;
+        private double _tol;
+        private double _beta_1;
+        private double _beta_2;
+        private double _epsilon;
+
         AdamOptimizer _optimizer;
 
         private int _distinctLabelCount;
@@ -212,29 +220,39 @@ namespace IDS.BusinessLogic.Services
 
         private LabelType _labelType;
 
-        public Mlp(TrafficData trainTrafficData, List<int> hiddenLayersWithNeurons, double alpha,
-                   int batchSize, double learningRate, int maxIterations, double tol,
-                   double beta_1, double beta_2, double epsilon)
+        public Mlp(List<int> hiddenLayersWithNeurons, double alpha,  int batchSize, double learningRate,
+                   int maxIterations, double tol, double beta_1, double beta_2, double epsilon)
         {
+            _hiddenLayersWithNeurons = hiddenLayersWithNeurons;
             _alpha = alpha;
+            _batchSize = batchSize;
+            _learningRate = learningRate;
+            _maxIterations = maxIterations;
+            _tol = tol;
+            _beta_1 = beta_1;
+            _beta_2 = beta_2;
+            _epsilon = epsilon;
+        }
 
+        public void Train(TrafficData trainTrafficData)
+        {
             _distinctLabelCount = trainTrafficData.Samples.Select(s => s.Label).Distinct().Count();
 
             _layersOfNeurons = new List<int>();
             _layersOfNeurons.Add(trainTrafficData.Samples[0].Features.Count); // Input layer
-            _layersOfNeurons.AddRange(hiddenLayersWithNeurons); // Hidden layers
+            _layersOfNeurons.AddRange(_hiddenLayersWithNeurons); // Hidden layers
             _layersOfNeurons.Add(_distinctLabelCount); // output layer
 
             // Adam Optimizer parameter
-            _batchSize = Math.Min(batchSize, trainTrafficData.Samples.Count);
+            _batchSize = Math.Min(_batchSize, trainTrafficData.Samples.Count);
 
             // Initialize arrays
             InitializeWeights();
 
             // Adam Optimizer
-            _optimizer = new AdamOptimizer(learningRate, beta_1, beta_2, epsilon, ref _weights, ref _bias);
+            _optimizer = new AdamOptimizer(_learningRate, _beta_1, _beta_2, _epsilon, ref _weights, ref _bias);
 
-            Train(trainTrafficData.Samples, maxIterations, tol);
+            Train(trainTrafficData.Samples);
         }
 
         private void InitializeWeights()
@@ -281,7 +299,7 @@ namespace IDS.BusinessLogic.Services
             }
         }
 
-        private void Train(List<Sample> samples, int maxIterations, double tol)
+        private void Train(List<Sample> samples)
         {
             DefineLabelType(samples);
 
@@ -306,7 +324,7 @@ namespace IDS.BusinessLogic.Services
             double loss = 999;
             int it = 0;
 
-            while (it < maxIterations && loss > tol)
+            while (it < _maxIterations && loss > _tol)
             {
                 double accumulatedLoss = 0;
                 foreach (List<Sample> batchSlice in GenerateBatches(samples))
@@ -667,17 +685,26 @@ namespace IDS.BusinessLogic.Services
         }
     }
 
-    public class MlpService : IMlpService
+    public class MlpService : IClassifierService
     {
-        public List<int> Predict(TrafficData trainTrafficData, TrafficData testTrafficData,
-                                 List<int> hiddenLayersWithNeurons, double alpha, int batchSize,
-                                 double learningRate, int maxIterations, double tol,
-                                 double beta_1, double beta_2, double epsilon)
+        private Mlp _mlp;
+
+        public MlpService(List<int> hiddenLayersWithNeurons, double alpha, int batchSize,
+                          double learningRate, int maxIterations, double tol,
+                          double beta_1, double beta_2, double epsilon)
         {
-            Mlp mlp = new Mlp(trainTrafficData, hiddenLayersWithNeurons, alpha,
-                              batchSize, learningRate, maxIterations, tol,
-                              beta_1, beta_2, epsilon);
-            return mlp.Predict(testTrafficData.Samples);
+            _mlp = new Mlp(hiddenLayersWithNeurons, alpha, batchSize, learningRate,
+                           maxIterations, tol, beta_1, beta_2, epsilon);
+        }
+
+        public void Train(TrafficData trainTrafficData)
+        {
+            _mlp.Train(trainTrafficData);
+        }
+
+        public List<int> Predict(TrafficData testTrafficData)
+        {
+            return _mlp.Predict(testTrafficData.Samples);
         }
     }
 }

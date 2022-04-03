@@ -194,27 +194,44 @@ namespace IDS.BusinessLogic.Services
 
     public class XGBoost
     {
-        private List<XGBoostTree> _trees;
+        private int _rounds;
+        private int _maxDepth;
+        private int _minSize;
         private double _learningRate;
+        private double _lambda;
+        private int _gamma;
+        private double _nFeaturesRatio;
 
-        public XGBoost(TrafficData trainTrafficData, int rounds, int maxDepth,
+        private List<XGBoostTree> _trees;
+        
+        public XGBoost(int rounds, int maxDepth,
                        int minSize, double learningRate, double lambda,
                        int gamma, double nFeaturesRatio)
         {
+            _rounds = rounds;
+            _maxDepth = maxDepth;
+            _minSize = minSize;
             _learningRate = learningRate;
+            _lambda = lambda;
+            _gamma = gamma;
+            _nFeaturesRatio = nFeaturesRatio;
 
             _trees = new List<XGBoostTree>();
 
-            List<int> labels = trainTrafficData.Samples.Select(s => s.Label).ToList(); // all labels
-            List<double> basePreds = Enumerable.Repeat(1.0, trainTrafficData.Samples.Count).ToList(); // fill 1
             
+        }
 
-            for (int i = 0; i < rounds; i++)
+        public void Train(TrafficData trainTrafficData)
+        {
+            List<int> labels = trainTrafficData.Samples.Select(s => s.Label).ToList(); // All labels
+            List<double> basePreds = Enumerable.Repeat(1.0, trainTrafficData.Samples.Count).ToList(); // Fill 1
+
+            for (int i = 0; i < _rounds; i++)
             {
                 List<double> grad = Grad(basePreds, labels);
                 List<double> hess = Hess(basePreds);
-                XGBoostTree tree = new XGBoostTree(trainTrafficData, grad, hess, maxDepth,
-                                                   minSize, lambda, gamma, nFeaturesRatio);
+                XGBoostTree tree = new XGBoostTree(trainTrafficData, grad, hess, _maxDepth,
+                                                   _minSize, _lambda, _gamma, _nFeaturesRatio);
                 for (int j = 0; j < trainTrafficData.Samples.Count; j++)
                 {
                     basePreds[j] += _learningRate * tree.Predict(trainTrafficData.Samples[j]);
@@ -283,15 +300,24 @@ namespace IDS.BusinessLogic.Services
         }
     }
 
-    public class XGBoostService : IXGBoostService
+    public class XGBoostService : IClassifierService
     {
-        public List<int> Predict(TrafficData trainTrafficData, TrafficData testTrafficData, int rounds,
-                                 int maxDepth, int minSize, double learningRate,
-                                 double lambda, int gamma, double nFeaturesRatio)
+        private XGBoost _xgBoost;
+
+        public XGBoostService(int rounds, int maxDepth, int minSize, double learningRate,
+                              double lambda, int gamma, double nFeaturesRatio)
         {
-            XGBoost xgBoost = new XGBoost(trainTrafficData, rounds, maxDepth, minSize,
-                                          learningRate, lambda, gamma, nFeaturesRatio);
-            return xgBoost.Predict(testTrafficData);
+            _xgBoost = new XGBoost(rounds, maxDepth, minSize, learningRate, lambda, gamma, nFeaturesRatio);
+        }
+
+        public void Train(TrafficData trainTrafficData)
+        {
+            _xgBoost.Train(trainTrafficData);
+        }
+
+        public List<int> Predict(TrafficData testTrafficData)
+        {
+            return _xgBoost.Predict(testTrafficData);
         }
     }
 }

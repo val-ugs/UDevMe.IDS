@@ -7,8 +7,9 @@ using System.Threading.Tasks;
 
 namespace IDS.Domain.Abstractions
 {
-    public interface IKnnService
+    public interface IClassifierService
     {
-        public List<int> Predict(TrafficData trainTrafficData, TrafficData testTrafficData, int numberOfNeighbors);
+        public void Train(TrafficData trainTrafficData);
+        public List<int> Predict(TrafficData testTrafficData);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using IDS.BusinessLogic.Services;
 using IDS.DataAccess.CSV;
+using IDS.Domain.Abstractions;
 using IDS.Domain.Models;
 using NUnit.Framework;
 using System;
@@ -14,7 +15,6 @@ namespace IDS.Tests
     public class RandomForestServiceTests
     {
         private DataService _dataService;
-        private RandomForestService _algorithmService;
         private AccuracyMetricService _acuraccyMetricService;
         private F1ScoreMetricService _f1ScoreMetricService;
 
@@ -25,7 +25,6 @@ namespace IDS.Tests
                 new CsvSettings("..\\..\\..\\..\\IDS.DataAccess.CSV\\Data", ',')
             );
             _dataService = new DataService(csvDataRepository);
-            _algorithmService = new RandomForestService();
             _acuraccyMetricService = new AccuracyMetricService();
             _f1ScoreMetricService = new F1ScoreMetricService();
         }
@@ -36,13 +35,14 @@ namespace IDS.Tests
             // arrange
             string trainCsvFileName = "UNSW_NB15_training-set.csv";
             string testCsvFileName = "UNSW_NB15_training-set.csv";
-            int numTrees = 3;
+            int numberOfTrees = 3;
             int maxDepth = 5;
             int minSize = 3;
             double partOfTrafficDataRatio = 0.5;
 
             TrafficDataConverterService convertService = new TrafficDataConverterService(DataSource.Unsw, ClassificationType.Binary, true);
             NormalizeFeaturesService normalizeService = new NormalizeFeaturesService(0, 1);
+            IClassifierService classifierService = new RandomForestService(numberOfTrees, maxDepth, minSize, partOfTrafficDataRatio);
 
             List<int> trueLabels = new List<int>();
 
@@ -52,22 +52,23 @@ namespace IDS.Tests
             List<string[]> testData = _dataService.GetData(testCsvFileName, hasHeaderRow: true);
             TrafficData testTrafficData = convertService.ConvertTestData(testData);
 
-            trainTrafficData.Samples = trainTrafficData.Samples.Take(1000).ToList();
-            testTrafficData.Samples = testTrafficData.Samples.Take(1000).ToList();
+            trainTrafficData.Samples = trainTrafficData.Samples.Take(1200).ToList();
+            testTrafficData.Samples = testTrafficData.Samples.Take(400).ToList();
             trueLabels = testTrafficData.Samples.Select(s => s.Label).ToList();
 
             trainTrafficData.Samples = normalizeService.NormalizeTrainSamples(trainTrafficData.Samples);
             testTrafficData.Samples = normalizeService.NormalizeTestSamples(testTrafficData.Samples);
 
+            classifierService.Train(trainTrafficData);
+
             // act
-            var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numTrees,
-                                                   maxDepth, minSize, partOfTrafficDataRatio);
+            var result = classifierService.Predict(testTrafficData);
             var accuracy = _acuraccyMetricService.Calculate(trueLabels, result);
             var f1Score = _f1ScoreMetricService.Calculate(trueLabels, result);
 
             // assert
-            Assert.IsTrue(accuracy >= 0.9);
-            Assert.IsTrue(f1Score >= 0.9);
+            Assert.IsTrue(accuracy >= 0.75);
+            Assert.IsTrue(f1Score >= 0.75);
         }
 
         [Test]
@@ -83,6 +84,7 @@ namespace IDS.Tests
 
             TrafficDataConverterService convertService = new TrafficDataConverterService(DataSource.Kdd, ClassificationType.Binary, true);
             NormalizeFeaturesService normalizeService = new NormalizeFeaturesService(0, 1);
+            IClassifierService classifierService = new RandomForestService(numberOfTrees, maxDepth, minSize, partOfTrafficDataRatio);
 
             List<int> trueLabels = new List<int>();
 
@@ -92,16 +94,17 @@ namespace IDS.Tests
             List<string[]> testData = _dataService.GetData(testCsvFileName, hasHeaderRow: true);
             TrafficData testTrafficData = convertService.ConvertTestData(testData);
 
-            trainTrafficData.Samples = trainTrafficData.Samples.Take(1000).ToList();
-            testTrafficData.Samples = testTrafficData.Samples.Take(300).ToList();
+            trainTrafficData.Samples = trainTrafficData.Samples.Take(1200).ToList();
+            testTrafficData.Samples = testTrafficData.Samples.Take(400).ToList();
             trueLabels = testTrafficData.Samples.Select(s => s.Label).ToList();
 
             trainTrafficData.Samples = normalizeService.NormalizeTrainSamples(trainTrafficData.Samples);
             testTrafficData.Samples = normalizeService.NormalizeTestSamples(testTrafficData.Samples);
 
+            classifierService.Train(trainTrafficData);
+
             // act
-            var result = _algorithmService.Predict(trainTrafficData, testTrafficData, numberOfTrees,
-                                                   maxDepth, minSize, partOfTrafficDataRatio);
+            var result = classifierService.Predict(testTrafficData);
             var accuracy = _acuraccyMetricService.Calculate(trueLabels, result);
             var f1Score = _f1ScoreMetricService.Calculate(trueLabels, result);
 

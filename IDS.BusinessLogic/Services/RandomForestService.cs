@@ -179,34 +179,38 @@ namespace IDS.BusinessLogic.Services
         }
     }
 
-    public class RandomForestService : IRandomForestService
+    public class RandomForestService : IClassifierService
     {
-        public List<int> Predict(TrafficData trainTrafficData, TrafficData testTrafficData, int numTrees,
-                                 int maxDepth, int minSize, double partOfTrafficDataRatio)
+        private int _numberOfTress;
+        private int _maxDepth;
+        private int _minSize;
+        private double _partOfTrafficDataRatio;
+
+        private Tree[] _trees;
+
+        public RandomForestService(int numberOfTrees, int maxDepth, int minSize, double partOfTrafficDataRatio)
+        {
+            _trees = new Tree[numberOfTrees];
+            _numberOfTress = numberOfTrees;
+            _maxDepth = maxDepth;
+            _minSize = minSize;
+            _partOfTrafficDataRatio = partOfTrafficDataRatio;
+        }
+
+        public void Train(TrafficData trainTrafficData)
         {
             int nFeatures = (int)Math.Sqrt(trainTrafficData.Samples[0].Features.Count);
 
-            Tree[] trees = new Tree[numTrees];
-            List<int> predictions = new List<int>();
-
-            for (int i = 0; i < numTrees; i++)
+            for (int i = 0; i < _numberOfTress; i++)
             {
-                TrafficData partOfTrainTrafficData = GetPartOfTrainTrafficData(trainTrafficData, partOfTrafficDataRatio);
-                trees[i] = new Tree(partOfTrainTrafficData, maxDepth, minSize, nFeatures);
+                TrafficData partOfTrainTrafficData = GetPartOfTrainTrafficData(trainTrafficData);
+                _trees[i] = new Tree(partOfTrainTrafficData, _maxDepth, _minSize, nFeatures);
             }
-
-            foreach (Sample testSample in testTrafficData.Samples)
-            {
-                int predictedFromTree = Predict(trees, testSample);
-                predictions.Add(predictedFromTree);
-            }
-
-            return predictions;
         }
 
-        private TrafficData GetPartOfTrainTrafficData(TrafficData trainTrafficData, double partOfTrafficDataRatio)
+        private TrafficData GetPartOfTrainTrafficData(TrafficData trainTrafficData)
         {
-            int n = (int)Math.Round(trainTrafficData.Samples.Count * partOfTrafficDataRatio);
+            int n = (int)Math.Round(trainTrafficData.Samples.Count * _partOfTrafficDataRatio);
             TrafficData partOfTrafficData = new TrafficData(n);
             Random rand = new Random();
 
@@ -219,10 +223,23 @@ namespace IDS.BusinessLogic.Services
             return partOfTrafficData;
         }
 
-        private int Predict(Tree[] trees, Sample testSample)
+        public List<int> Predict(TrafficData testTrafficData)
         {
             List<int> predictions = new List<int>();
-            foreach (Tree tree in trees)
+
+            foreach (Sample testSample in testTrafficData.Samples)
+            {
+                int predictedFromTree = Predict(testSample);
+                predictions.Add(predictedFromTree);
+            }
+
+            return predictions;
+        }
+
+        private int Predict(Sample testSample)
+        {
+            List<int> predictions = new List<int>();
+            foreach (Tree tree in _trees)
             {
                 predictions.Add(tree.Predict(testSample));
             }
