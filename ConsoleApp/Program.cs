@@ -51,6 +51,7 @@ namespace ConsoleApp
             _csvDataService = new DataService(csvDataRepository);
             _pcapDataService = new DataService(pcapDataRepository);
 
+            DisplayHeader();
 
             bool isCorrectOption = false;
 
@@ -816,6 +817,51 @@ namespace ConsoleApp
             }
 
             return value;
+        }
+
+        private static void DisplayHeader()
+        {
+            var logo = new[]
+            {
+                    @"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+                    @"@  _ _      _ _   _ _......                _ _      _ _   _ _  _ _  _ _              @",
+                    @"@ ( V )    ( v ) ( v ..... \              ( V )    ( v ) ( v '' v '' v )             @",
+                    @"@  | |      | |   | |     \ |  _ _..._ _   | |      | |   | /''\ /''\ |   _ _..._ _  @",
+                    @"@  | |      | |   | |     | | ( v ... v )  | |      | |   | |  | |  | |  ( v ... v ) @",
+                    @"@  | |      | |   | |     | |  | |   | |   | |      | |   | |  | |  | |   | |   | |  @",
+                    @"@  | |      | |   | |     | |  |  '''_^_)  | |      | |   | |  | |  | |   |  '''_^_) @",
+                    @"@  | |      | |   | |     / |  | ('''  _    \ \    / /    | |  | |  | |   | ('''  _  @",
+                    @"@ (_^_'....'_^_) (_^_'''''./  (_^_'...'_)    \ '..' /     | |  | |  | |  (_^_'...'_) @",
+                    @"@     '....'         '''''        '''''       '....'     (_^_)(_^_)(_^/      '''''   @",
+                    @"@                                                                                    @",
+                    @"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+            };
+            var title = new[]
+            {
+                    @"                           @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+                    @"                           @  _ _   _ _......             @",
+                    @"                           @ ( V ) ( v ..... \   /'''''.  @",
+                    @"                           @  | |   | |     \ | / /'''._) @",
+                    @"                           @  | |   | |     | | \ \       @",
+                    @"                           @  | |   | |     | |  \ ''''\  @",
+                    @"                           @  | |   | |     | |   ''''\ \ @",
+                    @"                           @  | |   | |     / |  _    / / @",
+                    @"                           @ (_^_) (_^_'''''./  ( '''' /  @",
+                    @"                           @           '''''     ''''''   @",
+                    @"                           @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+            };
+            var author =
+                    @"                                                          Created By Valentin Charugin";
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            foreach (string line in logo)
+                Console.WriteLine(line);
+            Console.ForegroundColor = ConsoleColor.Green;
+            foreach (string line in title)
+                Console.WriteLine(line);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(author);
+            Console.ResetColor();
         }
     }
 }
