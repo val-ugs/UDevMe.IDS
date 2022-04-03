@@ -69,105 +69,77 @@ namespace IDS.BusinessLogic.Services
         private ClassificationType? _classificationType;
         private bool _hasOneHotEncode;
 
+        private string _labelNameWithoutAttacks = "NORMAL";
+        private List<string> _labelNamesWithAttacks = null;
+
         public TrafficDataConverterService(DataSource dataSource, ClassificationType classificationType, bool hasOneHotEncode)
         {
             _dataSource = dataSource;
             _classificationType = classificationType;
             _hasOneHotEncode = hasOneHotEncode;
+
+            _labelNamesWithAttacks = new List<string>();
         }
 
         public TrafficData ConvertTrainData(List<string[]> data)
         {
             if (_hasOneHotEncode)
                 _oneHotEncoder = new OneHotEncoder(data);
-            return Convert(data);
+
+            return Convert(data, hasLabel: true);
         }
 
-        public TrafficData ConvertTestData(List<string[]> data)
+        public TrafficData ConvertTestData(List<string[]> data, bool hasLabel)
         {
-            return Convert(data);
+            return Convert(data, hasLabel);
         }
 
-        private TrafficData Convert(List<string[]> data)
+        private TrafficData Convert(List<string[]> data, bool hasLabel)
         {
             switch (_dataSource)
             {
                 case DataSource.RealTime:
-                    return ConvertFromRealtimeData(data);
-                case DataSource.Unsw:
-                    return ConvertFromUnswData(data);
+                    return ConvertFromData(data, hasLabel);
                 case DataSource.Kdd:
-                    return ConvertFromKddData(data);
+                case DataSource.Unsw:
+                    data = data.Select(d => d.Take(d.Count() - 1).ToArray()).ToList(); // Remove last element in data row
+                    return ConvertFromData(data, hasLabel);
             }
 
             return null;
         }
 
-        private TrafficData ConvertFromRealtimeData(List<string[]> data)
+        private TrafficData ConvertFromData(List<string[]> data, bool hasLabel)
         {
             TrafficData trafficData = new TrafficData(data.Count);
+            List<string> labelNamesForCurrentData = null;
 
-            string nameWithoutAttacks = "Normal";
-            List<string> nameOfAttacks = data.Select(d => d[d.Length - 1])
-                                             .Distinct()
-                                             .Where(a => a.ToUpper() !=  nameWithoutAttacks.ToUpper()) // Remove Normal
-                                             .ToList();
-
-            foreach (string[] dataRow in data)
+            int endFeatureIndex = 0, labelNameIndex = 0;
+            int dataRowLength = data[0].Length;
+            if (hasLabel)
             {
-                List<double> features = GetFeaturesFromDataRow(dataRow, 0, dataRow.Length - 1);
-                int label = GetLabelFromDataRow(dataRow, dataRow.Length - 1, nameWithoutAttacks, nameOfAttacks);
+                labelNameIndex = dataRowLength - 1;
+                endFeatureIndex = dataRowLength - 2;
+                labelNamesForCurrentData = data.Select(d => d[labelNameIndex].ToUpper()).Distinct().ToList();
+            }
+            else
+                endFeatureIndex = dataRowLength - 1;
 
-                trafficData.Samples.Add(new Sample(features, label));
+            if (labelNamesForCurrentData != null)
+            {
+                if (labelNamesForCurrentData.Contains(_labelNameWithoutAttacks.ToUpper()))
+                    labelNamesForCurrentData.Remove(_labelNameWithoutAttacks.ToUpper());
+
+                if (_labelNamesWithAttacks != null)
+                    foreach (string labelName in labelNamesForCurrentData)
+                        if (_labelNamesWithAttacks.Contains(labelName) == false)
+                            _labelNamesWithAttacks.Add(labelName);
             }
 
-            return trafficData;
-        }
-
-        private TrafficData ConvertFromUnswData(List<string[]> data)
-        {
-            TrafficData trafficData = new TrafficData(data.Count);
-
-            string nameWithoutAttacks = "Normal";
-            List<string> nameOfAttacks = new List<string>
-            {
-                "Fuzzers", "Analysis", "Backdoor", "DoS", "Exploits",
-                "Generic", "Reconnaissance", "Shellcode", "Worms"
-            };
-
             foreach (string[] dataRow in data)
             {
-                List<double> features = GetFeaturesFromDataRow(dataRow, 0, dataRow.Length - 2);
-                int label = GetLabelFromDataRow(dataRow, dataRow.Length - 2, nameWithoutAttacks, nameOfAttacks);
-
-                trafficData.Samples.Add(new Sample(features, label));
-            }
-
-            return trafficData;
-        }
-
-        private TrafficData ConvertFromKddData(List<string[]> data)
-        {
-            TrafficData trafficData = new TrafficData(data.Count);
-
-            string nameWithoutAttacks = "Normal";
-            List<string> nameOfAttacks = new List<string>
-            {
-                // DoS
-                "Back", "Land", "Neptune", "Pod", "Smurf", "Teardrop", "Apache2", "Udpstorm", "Processtable", "Worm", "Mailbomb",
-                // Probe
-                "Satan", "Ipsweep", "Nmap", "Portsweep", "Mscan", "Saint",
-                // R2L
-                "Guess_passwd", "Ftp_write", "Imap", "Phf", "Multihop", "Warezmaster", "Warezclient", "Spy",
-                "Xlock", "Xsnoop", "Snmpguess", "Snmpgetattack", "Httptunnel", "Sendmail", "Named",
-                // U2R
-                "Buffer_overflow", "Loadmodule", "Rootkit", "Perl", "Sqlattack", "Xterm", "Ps"
-            };
-
-            foreach (string[] dataRow in data)
-            {
-                List<double> features = GetFeaturesFromDataRow(dataRow, 0, dataRow.Length - 2);
-                int label = GetLabelFromDataRow(dataRow, dataRow.Length - 2, nameWithoutAttacks, nameOfAttacks);
+                List<double> features = GetFeaturesFromDataRow(dataRow, 0, endFeatureIndex);
+                int label = hasLabel ? GetLabelByNames(dataRow[labelNameIndex]) : -1;
 
                 trafficData.Samples.Add(new Sample(features, label));
             }
@@ -178,7 +150,7 @@ namespace IDS.BusinessLogic.Services
         private List<double> GetFeaturesFromDataRow(string[] dataRow, int startIndex, int endIndex)
         {
             List<double> features = new List<double>();
-            for (int i = startIndex; i < endIndex; i++)
+            for (int i = startIndex; i <= endIndex; i++)
             {
                 if (double.TryParse(dataRow[i], NumberStyles.Any, CultureInfo.InvariantCulture, out double number))
                     features.Add(number);
@@ -192,53 +164,34 @@ namespace IDS.BusinessLogic.Services
             return features;
         }
 
-        private double[] OneHotEncoder(string value)
+        private int GetLabelByNames(string labelName)
         {
-            //install 
-            //return CategoricalCatalog.OneHotEncoding()
-            return new double[] { 0, 0 };
-        }
-
-        private int GetLabelFromDataRow(string[] dataRow, int labelIndex,
-                                        string nameWithoutAttacks = null, List<string> nameOfAttacks = null)
-        {
-            int label;
-
-            if (int.TryParse(dataRow[labelIndex], NumberStyles.Any, CultureInfo.InvariantCulture, out int number))
-                label = _classificationType switch
-                {
-                    ClassificationType.Binary => number > 1 ? 1 : number,
-                    ClassificationType.Multiclass => number,
-                    _ => throw new Exception("Classification type not set")
-                };
-            else
-            {
-                if (nameWithoutAttacks == null)
-                    throw new Exception("Name without attacks not set");
-                if (nameOfAttacks == null)
-                    throw new Exception("Name of attacks not set");
-
-                label = GetLabelByNames(dataRow[labelIndex], nameWithoutAttacks, nameOfAttacks);
-            }
-
-            return label;
-        }
-
-        private int GetLabelByNames(string labelName, string nameWithoutAttacks, List<string> nameOfAttacks)
-        {
-            if (labelName.ToUpper() == nameWithoutAttacks.ToUpper())
+            if (labelName.ToUpper() == _labelNameWithoutAttacks.ToUpper())
                 return 0;
 
-            for (int i = 1; i <= nameOfAttacks.Count; i++)
-                if (labelName.ToUpper() == nameOfAttacks[i - 1].ToUpper())
-                    return _classificationType switch
-                    {
-                        ClassificationType.Binary => 1,
-                        ClassificationType.Multiclass => i,
-                        _ => throw new Exception("Classification type not set")
-                    };
+            if (_labelNamesWithAttacks != null)
+                for (int i = 1; i <= _labelNamesWithAttacks.Count; i++)
+                    if (labelName.ToUpper() == _labelNamesWithAttacks[i - 1].ToUpper())
+                        return _classificationType switch
+                        {
+                            ClassificationType.Binary => 1,
+                            ClassificationType.Multiclass => i,
+                            _ => throw new Exception("Classification type not set")
+                        };
 
             throw new Exception("Name of attacks not found");
+        }
+
+        public string GetNameByLabel(int label)
+        {
+            if (label == 0)
+                return _labelNameWithoutAttacks;
+
+            if (_labelNamesWithAttacks != null)
+                if (label - 1 < _labelNamesWithAttacks.Count)
+                    return _labelNamesWithAttacks[label - 1];
+
+            throw new Exception("Label not found");
         }
     }
 }

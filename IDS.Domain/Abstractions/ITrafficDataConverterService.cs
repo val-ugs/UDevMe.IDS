@@ -10,6 +10,7 @@ namespace IDS.Domain.Abstractions
     public interface ITrafficDataConverterService
     {
         TrafficData ConvertTrainData(List<string[]> data);
-        TrafficData ConvertTestData(List<string[]> data);
+        TrafficData ConvertTestData(List<string[]> data, bool hasLabel);
+        string GetNameByLabel(int label);
     }
 }

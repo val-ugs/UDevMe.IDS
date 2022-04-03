@@ -56,7 +56,7 @@ namespace IDS.Tests
             TrafficData trainTrafficData = converterService.ConvertTrainData(trainData);
 
             List<string[]> testData = _dataService.GetData(testCsvFileName, hasHeaderRow: true);
-            TrafficData testTrafficData = converterService.ConvertTestData(testData);
+            TrafficData testTrafficData = converterService.ConvertTestData(testData, hasLabel: true);
 
             trainTrafficData.Samples = trainTrafficData.Samples.Take(1200).ToList();
             testTrafficData.Samples = testTrafficData.Samples.Take(400).ToList();
@@ -104,7 +104,7 @@ namespace IDS.Tests
             TrafficData trainTrafficData = converterService.ConvertTrainData(trainData);
 
             List<string[]> testData = _dataService.GetData(testCsvFileName, hasHeaderRow: true);
-            TrafficData testTrafficData = converterService.ConvertTestData(testData);
+            TrafficData testTrafficData = converterService.ConvertTestData(testData, hasLabel: true);
 
             trainTrafficData.Samples = trainTrafficData.Samples.Take(1200).ToList();
             testTrafficData.Samples = testTrafficData.Samples.Take(400).ToList();
