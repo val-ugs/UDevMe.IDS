@@ -40,17 +40,17 @@ namespace IDS.Tests
             int minSize = 3;
             double partOfTrafficDataRatio = 0.5;
 
-            TrafficDataConverterService convertService = new TrafficDataConverterService(DataSource.Unsw, ClassificationType.Binary, true);
+            TrafficDataConverterService converterService = new TrafficDataConverterService(DataSource.Unsw, ClassificationType.Binary, true);
             NormalizeFeaturesService normalizeService = new NormalizeFeaturesService(0, 1);
             IClassifierService classifierService = new RandomForestService(numberOfTrees, maxDepth, minSize, partOfTrafficDataRatio);
 
             List<int> trueLabels = new List<int>();
 
             List<string[]> trainData = _dataService.GetData(trainCsvFileName, hasHeaderRow: true);
-            TrafficData trainTrafficData = convertService.ConvertTrainData(trainData);
+            TrafficData trainTrafficData = converterService.ConvertTrainData(trainData);
 
             List<string[]> testData = _dataService.GetData(testCsvFileName, hasHeaderRow: true);
-            TrafficData testTrafficData = convertService.ConvertTestData(testData);
+            TrafficData testTrafficData = converterService.ConvertTestData(testData);
 
             trainTrafficData.Samples = trainTrafficData.Samples.Take(1200).ToList();
             testTrafficData.Samples = testTrafficData.Samples.Take(400).ToList();
@@ -82,17 +82,17 @@ namespace IDS.Tests
             int minSize = 3;
             double partOfTrafficDataRatio = 0.5;
 
-            TrafficDataConverterService convertService = new TrafficDataConverterService(DataSource.Kdd, ClassificationType.Binary, true);
+            TrafficDataConverterService converterService = new TrafficDataConverterService(DataSource.Kdd, ClassificationType.Binary, true);
             NormalizeFeaturesService normalizeService = new NormalizeFeaturesService(0, 1);
             IClassifierService classifierService = new RandomForestService(numberOfTrees, maxDepth, minSize, partOfTrafficDataRatio);
 
             List<int> trueLabels = new List<int>();
 
             List<string[]> trainData = _dataService.GetData(trainCsvFileName, hasHeaderRow: true);
-            TrafficData trainTrafficData = convertService.ConvertTrainData(trainData);
+            TrafficData trainTrafficData = converterService.ConvertTrainData(trainData);
 
             List<string[]> testData = _dataService.GetData(testCsvFileName, hasHeaderRow: true);
-            TrafficData testTrafficData = convertService.ConvertTestData(testData);
+            TrafficData testTrafficData = converterService.ConvertTestData(testData);
 
             trainTrafficData.Samples = trainTrafficData.Samples.Take(1200).ToList();
             testTrafficData.Samples = testTrafficData.Samples.Take(400).ToList();
