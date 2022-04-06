@@ -11,8 +11,6 @@ namespace IDS.BusinessLogic.Services
     {
         public double Calculate(List<int> trueLabels, List<int> predictedLabels)
         {
-            const double constant = 0.01;
-
             if (trueLabels.Count != predictedLabels.Count)
                 return 0;
 
@@ -37,10 +35,10 @@ namespace IDS.BusinessLogic.Services
                     };
                 }
 
-                double precision = tp / (tp + fp + constant);
-                double recall = tp / (tp + fn + constant);
+                double precision = (tp + fp == 0) ? 0 : tp / (tp + fp);
+                double recall = (tp + fn == 0) ? 0 : tp / (tp + fn);
 
-                f1Scores[i] = 2 * precision * recall / (precision + recall + constant);
+                f1Scores[i] = (precision + recall == 0) ? 0 : 2 * precision * recall / (precision + recall);
             }
 
             return f1Scores.Sum() / distinctLabels.Length;
