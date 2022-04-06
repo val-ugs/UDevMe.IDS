@@ -23,6 +23,7 @@ namespace IDS.Tests
             );
             DataService dataService = new DataService(csvDataRepository);
 
+            //act
             List<string[]> data = dataService.GetData(csvFile, hasHeaderRow: true);
 
             // assert
@@ -40,6 +41,7 @@ namespace IDS.Tests
             );
             DataService dataService = new DataService(csvDataRepository);
 
+            //act
             List<string[]> data = dataService.GetData(pcapFile);
 
             // assert
