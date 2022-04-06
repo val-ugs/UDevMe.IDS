@@ -14,7 +14,7 @@ namespace IDS.BusinessLogic.Services
             if (trueLabels.Count != predictedLabels.Count)
                 return 0;
 
-            float counter = 0;
+            double counter = 0;
             for (int i = 0; i < trueLabels.Count; i++)
             {
                 if (trueLabels[i] == predictedLabels[i])
