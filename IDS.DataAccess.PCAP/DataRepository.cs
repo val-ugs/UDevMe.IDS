@@ -14,6 +14,8 @@ namespace IDS.DataAccess.PCAP
 {
     public class DataRepository : IDataRepository
     {
+        private const int NumberOfBitsInBytes = 8;
+
         private static DateTime _lastPacketStartTime = DateTime.Now;
         private readonly string _path;
         Dictionary<(string, int), string> _services;
@@ -100,6 +102,30 @@ namespace IDS.DataAccess.PCAP
 
                 data.Add(new string[]
                 {
+                    connections[i][8].ToString(), // protocol
+                    connections[i][9].ToString(), // service
+                    connections[i][11].ToString(), // srcBytes
+                    connections[i][12].ToString(), // dstBytes
+                    connections[i][13].ToString(), // land
+                    connections[i][14].ToString(), // wrongFrag
+                    connections[i][16].ToString(), // srcPackets
+                    connections[i][17].ToString(), // dstPackets
+                    connections[i][18].ToString(), // srcTtl
+                    connections[i][19].ToString(), // dstTtl
+                    connections[i][20].ToString(), // srcLoad
+                    connections[i][21].ToString(), // dstLoad
+                    contentData[0].ToString(), // hot
+                    contentData[2].ToString(), // loggedIn
+                    contentData[5].ToString(), // suAttempted
+                    contentData[6].ToString(), // numRoot
+                    hostTraffic[7].ToString(), // srvRerrorRate
+                    hostTraffic[8].ToString(), // srvDiffHostRate
+                    hostTraffic[13].ToString(), // dstHostSameSrcPortRate
+                    hostTraffic[14].ToString(), // dstHostSrvDiffHostRate
+                    hostTraffic[15].ToString(), // dstHostSerrorRate
+                    hostTraffic[16].ToString(), // dstHostSrvSerrorRate
+
+                    /*
                     connections[i][7].ToString(), // duration
                     connections[i][8].ToString(), // protocol
                     connections[i][9].ToString(), // service
@@ -140,6 +166,7 @@ namespace IDS.DataAccess.PCAP
                     hostTraffic[16].ToString(), // dstHostSrvSerrorRate
                     hostTraffic[17].ToString(), // dstHostRerrorRate
                     hostTraffic[18].ToString() // dstHostSrvRerrorRate
+                    */
                 });
             }
 
@@ -170,10 +197,19 @@ namespace IDS.DataAccess.PCAP
                 int dstBytes = 0;
                 int wrongFrag = 0;
                 int urgent = 0;
+                int srcPackets = 0;
+                int dstPackets = 0;
+                double srcTtl = 0;
+                double dstTtl = 0;
+                double srcTime = 0;
+                double dstTime = 0;
+                const double constantTime = 0.1;
+                double srcLoad, dstLoad;
 
-                DateTime startTime = (i == 0) ? DateTime.Parse(timestamp) : DateTime.Parse(packetsWithTime.ElementAt(i - 1).Item1);
+                DateTime startTime = (i == 0) ? DateTime.Parse(timestamp) 
+                                              : DateTime.Parse(packetsWithTime.ElementAt(i - 1).Item1);
                 DateTime endTime = DateTime.Parse(timestamp);
-                double duration = (endTime - startTime).TotalMilliseconds;
+                double duration = (endTime - startTime).TotalSeconds;
 
                 int srcPort = 0, dstPort = 0;
                 string service = "";
@@ -191,7 +227,8 @@ namespace IDS.DataAccess.PCAP
                         srcPort = tcpPacket.SourcePort;
                         dstPort = tcpPacket.DestinationPort;
 
-                        string ianaService = srcPort <= dstPort ? GetIana((protocol, srcPort)) : GetIana((protocol, dstPort));
+                        string ianaService = srcPort <= dstPort ? GetIana((protocol, srcPort)) 
+                                                                : GetIana((protocol, dstPort));
                         if (ianaService == null)
                             service = "Unassigned";
                         else
@@ -206,7 +243,8 @@ namespace IDS.DataAccess.PCAP
                         srcPort = udpPacket.SourcePort;
                         dstPort = udpPacket.DestinationPort;
 
-                        string ianaService = service = srcPort <= dstPort ? GetIana((protocol, srcPort)) : GetIana((protocol, dstPort));
+                        string ianaService = service = srcPort <= dstPort ? GetIana((protocol, srcPort))
+                                                                          : GetIana((protocol, dstPort));
                         if (ianaService == null)
                             service = "Unassigned";
                         else
@@ -253,15 +291,29 @@ namespace IDS.DataAccess.PCAP
                 else
                     land = 0;
 
-                foreach (Packet otherPacket in packets)
+                srcTtl = ipPacket.TimeToLive;
+
+                for (int j = 0; j < packets.Count; j++)
                 {
-                    var otherIpPacket = otherPacket.Extract<IPPacket>();
+                    var otherIpPacket = packets[j].Extract<IPPacket>();
+                    string otherIpPacketTimestamp = packetsWithTime[j].Item1;
+                    DateTime otherStartTime = (i == 0) ? DateTime.Parse(timestamp)
+                                                       : DateTime.Parse(packetsWithTime.ElementAt(i - 1).Item1);
+                    DateTime otherEndTime = DateTime.Parse(timestamp);
+                    double otherDuration = (endTime - startTime).TotalSeconds;
+
                     if (otherIpPacket != null)
                     {
                         if (srcIp.ToString() == otherIpPacket.SourceAddress.ToString())
+                        {
                             srcBytes += otherIpPacket.Bytes.Length;
+                            srcTime += otherDuration;
+                        }
                         else
+                        {
                             dstBytes += otherIpPacket.Bytes.Length;
+                            dstTime += otherDuration;
+                        }
 
                         if (protocol.ToUpper() == "TCP" && otherIpPacket.Protocol.ToString().ToUpper() == "TCP")
                         {
@@ -274,18 +326,30 @@ namespace IDS.DataAccess.PCAP
                             var otherUdpPacket = packet.Extract<UdpPacket>();
                             wrongFrag += otherUdpPacket.ValidUdpChecksum ? 1 : 0;
                         }
-                        /*else if (protocol.ToUpper() == "ICMP" && otherIpPacket.Protocol.ToString().ToUpper() == "ICMP")
+
+                        if (srcIp.ToString() == otherIpPacket.SourceAddress.ToString()
+                            || dstIp.ToString() == otherIpPacket.DestinationAddress.ToString())
+                            srcPackets++;
+
+                        if (srcIp.ToString() == otherIpPacket.DestinationAddress.ToString()
+                            || dstIp.ToString() == otherIpPacket.SourceAddress.ToString())
                         {
-                            var otherIcmpPacket = packet.Extract<IcmpV4Packet>();
-                        }*/
+                            dstPackets++;
+                            if (dstTtl == 0)
+                                dstTtl = otherIpPacket.TimeToLive;
+                        }
                     }
                 }
+
+                srcLoad = srcBytes * NumberOfBitsInBytes / (srcTime + constantTime);
+                dstLoad = dstBytes * NumberOfBitsInBytes / (dstTime + constantTime);
 
                 object[] connectionRow = new object[]
                 {
                     timestamp, srcIp, srcPort, dstIp, dstPort, index, i,
                     duration, protocol, service, statusFlag, srcBytes,
-                    dstBytes, land, wrongFrag, urgent
+                    dstBytes, land, wrongFrag, urgent,
+                    srcPackets, dstPackets, srcTtl, dstTtl, srcLoad, dstLoad
                 };
                 connections.Add(connectionRow);
             }
@@ -561,7 +625,7 @@ namespace IDS.DataAccess.PCAP
 
                 DateTime currentTimestamp = DateTime.Parse(currentConnection[0].ToString());
                 if (currentConnection[3].ToString() == connections[i][3].ToString() // dstIp
-                    && currentTimestamp > endTimestamp.AddSeconds(-2)) // timestamp
+                    && currentTimestamp >= endTimestamp.AddSeconds(-2)) // timestamp
                 {
                     count++;
 
