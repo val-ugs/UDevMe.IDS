@@ -8,6 +8,7 @@ using SharpPcap;
 using SharpPcap.LibPcap;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -157,7 +158,7 @@ namespace ConsoleApp
 
                         foreach (var statistic in statistics)
                         {
-                            Console.WriteLine("Label Name: " + statistic.LabelName + "; Count: " + statistic.Count);
+                            Console.WriteLine(DateTime.Now.ToString() + ": Label Name: " + statistic.LabelName + "; Count: " + statistic.Count);
                         }
                     }
                 }
@@ -166,6 +167,8 @@ namespace ConsoleApp
 
         private static void VerificateAlgorithmsFromCsv()
         {
+            Stopwatch stopWatch = new Stopwatch();
+
             string[] ListOfCsvFilenames = _csvDataService.GetFilenameList();
 
             if (ListOfCsvFilenames.Length == 0)
@@ -179,10 +182,14 @@ namespace ConsoleApp
             string testFilename = GetFilename(ListOfCsvFilenames, isTrain: true);
             List<string[]> testData = GetDataFromCsvFile(testFilename);
 
+            stopWatch.Start();
             TrafficDataConverterService trafficDataConverterService = GetTrafficDataConverterService(DefineDataSource(trainFilename));
-
             TrafficData trainTrafficData = trafficDataConverterService.ConvertTrainData(trainData);
-            TrafficData testTrafficData = trafficDataConverterService.ConvertTrainData(testData);
+            TrafficData testTrafficData = trafficDataConverterService.ConvertTestData(testData, hasLabel: true);
+            stopWatch.Stop();
+            TimeSpan ts = stopWatch.Elapsed;
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}\n", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+            Console.WriteLine("\nData conversion time: " + elapsedTime);
 
             int trainNumberOfSamples = TryReadValueFromConsole("Enter train number of samples",
                                                            min: 1, max: trainTrafficData.Samples.Count);
@@ -193,16 +200,32 @@ namespace ConsoleApp
             testTrafficData.Samples = testTrafficData.Samples.Take(testNumberOfSamples).ToList();
             List<int> trueLabels = testTrafficData.Samples.Select(s => s.Label).ToList();
 
+            stopWatch.Restart();
             NormalizeFeaturesService normalizeFeaturesService = GetNormalizeFeaturesService();
             trainTrafficData.Samples = normalizeFeaturesService.NormalizeTrainSamples(trainTrafficData.Samples);
             testTrafficData.Samples = normalizeFeaturesService.NormalizeTestSamples(testTrafficData.Samples);
+            stopWatch.Stop();
+            ts = stopWatch.Elapsed;
+            elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+            Console.WriteLine("\nData normalization time: " + elapsedTime);
 
             IClassifierService classifierService = GetClassifier();
-
+            
+            stopWatch.Restart();
             Console.WriteLine("Training...");
             classifierService.Train(trainTrafficData);
+            stopWatch.Stop();
+            ts = stopWatch.Elapsed;
+            elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}\n", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+            Console.WriteLine("\nTraining time: " + elapsedTime);
+
+            stopWatch.Restart();
             Console.WriteLine("Predicting...");
             List<int> result = classifierService.Predict(testTrafficData);
+            stopWatch.Stop();
+            ts = stopWatch.Elapsed;
+            elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+            Console.WriteLine("\nPrediction time: " + elapsedTime);
 
             int metricNumber;
             while (true)
@@ -305,7 +328,6 @@ namespace ConsoleApp
 
         private static NormalizeFeaturesService GetNormalizeFeaturesService()
         {
-            bool canNormalize;
             while (true)
             {
                 Console.WriteLine();
@@ -637,10 +659,12 @@ namespace ConsoleApp
             pcapFilenames = pcapFilenames.Where(f => f.ToUpper().StartsWith(DataSource.RealTime.ToString().ToUpper())).ToArray();
             if (pcapFilenames.Length == 0)
             {
+                Console.WriteLine();
                 Console.WriteLine("{0} files are not found", DataSource.RealTime.ToString().ToUpper());
                 return;
             }
 
+            Console.WriteLine();
             int fileCount = TryReadValueFromConsole("How many pcap files to convert to csv? If there are several, then merge into one?",
                                                     min: 1, max: pcapFilenames.Length);
 
@@ -648,6 +672,7 @@ namespace ConsoleApp
             {
                 while (true)
                 {
+                    Console.WriteLine();
                     Console.WriteLine("Select file:");
                     for (int i = 1; i <= pcapFilenames.Length; i++)
                         Console.WriteLine(i + ": " + pcapFilenames[i - 1]);
@@ -668,6 +693,7 @@ namespace ConsoleApp
             bool hasLabels;
             while (true)
             {
+                Console.WriteLine();
                 Console.WriteLine("Has labels? (yes, no)");
                 string text = Console.ReadLine();
                 if (text.ToUpper() == "yes".ToUpper() || text.ToUpper() == "no".ToUpper())
@@ -682,6 +708,7 @@ namespace ConsoleApp
 
             foreach (string pcapFilename in selectedPcapFilenames)
             {
+                Console.WriteLine();
                 Console.WriteLine("Reading data from {0}...", pcapFilename);
                 List<string[]> data = _pcapDataService.GetData(pcapFilename);
                 List<string[]> partOfData = new List<string[]>();
@@ -689,6 +716,7 @@ namespace ConsoleApp
                 int dataCount = 0;
                 while (true)
                 {
+                    Console.WriteLine();
                     Console.WriteLine("How many packets get? (1-{0})", data.Count);
                     if (Int32.TryParse(Console.ReadLine(), out dataCount))
                         if (dataCount > 0 && dataCount <= data.Count)
@@ -700,6 +728,7 @@ namespace ConsoleApp
                 {
                     while (true)
                     {
+                        Console.WriteLine();
                         Console.WriteLine("Take the first packets or random? (first, random)");
                         string text = Console.ReadLine();
                         if (text.ToUpper() == "first".ToUpper() || text.ToUpper() == "random".ToUpper())
