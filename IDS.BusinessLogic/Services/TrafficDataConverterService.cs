@@ -184,12 +184,19 @@ namespace IDS.BusinessLogic.Services
 
         public string GetNameByLabel(int label)
         {
-            if (label == 0)
-                return _labelNameWithoutAttacks;
+            switch (_classificationType)
+            {
+                case ClassificationType.Binary:
+                    return label == 0 ? _labelNameWithoutAttacks : "Attack";
+                case ClassificationType.Multiclass:
+                    if (label == 0)
+                        return _labelNameWithoutAttacks;
 
-            if (_labelNamesWithAttacks != null)
-                if (label - 1 < _labelNamesWithAttacks.Count)
-                    return _labelNamesWithAttacks[label - 1];
+                    if (_labelNamesWithAttacks != null)
+                        if (label - 1 < _labelNamesWithAttacks.Count)
+                            return _labelNamesWithAttacks[label - 1];
+                    break;
+            }
 
             throw new Exception("Label not found");
         }
