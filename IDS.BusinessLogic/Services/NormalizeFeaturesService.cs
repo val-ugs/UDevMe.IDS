@@ -54,7 +54,7 @@ namespace IDS.BusinessLogic.Services
         {
             for (int i = 0; i < samples.Count; i++)
             {
-                for (int j = 0; j < samples[i].Features.Count; j++)
+                for (int j = 0; j < _featureCount; j++)
                 {
                     samples[i].Features[j] = Normalize(samples[i].Features[j], j, _min, _max);
                 }
