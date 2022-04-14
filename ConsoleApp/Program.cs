@@ -35,6 +35,7 @@ namespace ConsoleApp
 
         private static readonly string _csvPath = "..\\..\\..\\..\\IDS.DataAccess.CSV\\Data";
         private static readonly string _pcapPath = "..\\..\\..\\..\\IDS.DataAccess.PCAP\\Data";
+        private static readonly string _logFilePath = "..\\..\\..\\Logs";
         private static readonly char _delimiter = ',';
         private static DataService _csvDataService;
         private static DataService _pcapDataService;
@@ -96,7 +97,7 @@ namespace ConsoleApp
         private static void DetectIntrusionsInRealtime()
         {
             // Prepare
-            string filename = "AUTO";
+            string pcapFilename = "AUTO";
             int captureTime = 30000; // In milliseconds (1 minute = 60000 milliseconds)
             string[] ListOfCsvFilenames = _csvDataService.GetFilenameList();
 
@@ -113,7 +114,7 @@ namespace ConsoleApp
 
             TrafficData trainTrafficData = trafficDataConverterService.ConvertTrainData(trainData);
 
-            int trainNumberOfSamples = TryReadValueFromConsole("Enter train number of samples",
+            int trainNumberOfSamples = TryReadValueFromConsole("\nEnter train number of samples",
                                                            min: 1, max: trainTrafficData.Samples.Count);
             trainTrafficData.Samples = trainTrafficData.Samples.Take(trainNumberOfSamples).ToList();
 
@@ -126,8 +127,11 @@ namespace ConsoleApp
 
             LibPcapLiveDevice selectedDevice = SelectDevice();
 
-            string ext = (filename.EndsWith(".pcap") || filename.EndsWith(".pcapng")) ? "" : ".pcap";
-            filename = DataSource.RealTime.ToString().ToUpper() + "_" + filename + ext;
+            string ext = (pcapFilename.EndsWith(".pcap") || pcapFilename.EndsWith(".pcapng")) ? "" : ".pcap";
+            pcapFilename = DataSource.RealTime.ToString().ToUpper() + "_" + pcapFilename + ext;
+
+            string logFilename = "log.log";
+            StringBuilder log = new StringBuilder();
 
             //RUN
             Console.WriteLine("Press Enter to stop...");
@@ -135,9 +139,9 @@ namespace ConsoleApp
             {
                 while (!Console.KeyAvailable)
                 {
-                    CreateCaptureFileFromRealtimeTraffic(filename, selectedDevice, captureTime);
+                    CreateCaptureFileFromRealtimeTraffic(pcapFilename, selectedDevice, captureTime);
 
-                    List<string[]> testData = _pcapDataService.GetData(filename);
+                    List<string[]> testData = _pcapDataService.GetData(pcapFilename);
 
                     if(testData.Count > 0)
                     {
@@ -156,10 +160,14 @@ namespace ConsoleApp
                                         Count = x.Count()
                                     });
 
+                        log.Append(DateTime.Now.ToString());
                         foreach (var statistic in statistics)
                         {
-                            Console.WriteLine(DateTime.Now.ToString() + ": Label Name: " + statistic.LabelName + "; Count: " + statistic.Count);
+                            log.Append(String.Format(" Label Name: {0} - Count: {1};", statistic.LabelName, statistic.Count));
                         }
+                        log.Append(Environment.NewLine);
+                        File.AppendAllText(_logFilePath + "\\" + logFilename, log.ToString());
+                        log.Clear();
                     }
                 }
             } while (Console.ReadKey(true).Key != ConsoleKey.Enter);
