@@ -607,6 +607,7 @@ namespace IDS.DataAccess.PCAP
             int dstHostRerrorCount = 0;
             int dstHostSameSrvCount = 0;
             int dstHostDiffSrvCount = 0;
+            int dstHostSameSrcPortCount = 0;
             int dstHostSrvSerrorCount = 0;
             int dstHostSrvRerrorCount = 0;
             int dstHostSrvDiffHostCount = 0;
@@ -627,6 +628,7 @@ namespace IDS.DataAccess.PCAP
                     break;
 
                 DateTime currentTimestamp = DateTime.Parse(currentConnection[0].ToString());
+                
                 if (currentConnection[3].ToString() == connections[i][3].ToString() // dstIp
                     && currentTimestamp >= endTimestamp.AddSeconds(-2)) // timestamp
                 {
@@ -655,7 +657,7 @@ namespace IDS.DataAccess.PCAP
                     {
                         int j = 0;
                         for (j = 0; j < diffSrvCount; j++)
-                            if (services[j].ToString() == connections[i][8].ToString())
+                            if (services[j].ToString() == connections[i][8].ToString()) // protocol
                                 break;
                         if (j == diffSrvCount)
                         {
@@ -728,14 +730,17 @@ namespace IDS.DataAccess.PCAP
                     {
                         int j = 0;
                         for (j = 0; j < dstHostDiffSrvCount; j++)
-                            if (dstServices[j].ToString() == connections[i][8].ToString())
+                            if (dstServices[j].ToString() == connections[i][8].ToString()) // protocol
                                 break;
                         if (j == dstHostDiffSrvCount)
                         {
-                            dstServices.Add(connections[i][8]);
+                            dstServices.Add(connections[i][8]); 
                             dstHostDiffSrvCount++;
                         }
                     }
+
+                    if (currentConnection[2].ToString() == connections[i][2].ToString()) // srcPort
+                        dstHostSameSrcPortCount++;
                 }
 
                 // For the same service
@@ -809,6 +814,7 @@ namespace IDS.DataAccess.PCAP
                     dstHostDiffSrvRate = 0;
 
                 dstHostSameSrvRate = (double)dstHostSameSrvCount / dstHostCount;
+                dstHostSameSrcPortRate = (double)dstHostSameSrcPortCount / dstHostCount;
             }
 
             if (srvCount > 0)
