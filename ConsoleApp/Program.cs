@@ -383,7 +383,7 @@ namespace ConsoleApp
 
         private static IClassifierService KnnClassifier()
         {
-            int numberOfNeighbors = 3;
+            int numberOfNeighbors = 5;
             numberOfNeighbors = TryReadValueFromConsole("Enter number of neighbors", numberOfNeighbors);
 
             Console.WriteLine("Initialization Knn...");
@@ -392,11 +392,11 @@ namespace ConsoleApp
 
         private static IClassifierService MlpClassifier()
         {
-            int numberOfLayers = 2;
+            int numberOfLayers = 1;
             bool defaulthiddenLayers = false;
             while (true)
             {
-                Console.WriteLine("Enter number of hidden layers (Default: {0} hidden layers - (100, 50)):", numberOfLayers);
+                Console.WriteLine("Enter number of hidden layers (Default: {0} hidden layers - (100)):", numberOfLayers);
                 string text = Console.ReadLine();
                 if (text == "")
                 {
@@ -428,7 +428,7 @@ namespace ConsoleApp
             }
             else
             {
-                hiddenLayersWithNeurons = new List<int> { 100, 50 };
+                hiddenLayersWithNeurons = new List<int> { 100 };
             }
 
             double alpha = 0.0001;
@@ -440,7 +440,7 @@ namespace ConsoleApp
             double learningRate = 0.001;
             learningRate = TryReadValueFromConsole("Enter learning rate", learningRate);
 
-            int maxIterations = 1000;
+            int maxIterations = 200;
             maxIterations = TryReadValueFromConsole("Enter max iterations", maxIterations);
 
             double tol = 0.0001;
@@ -460,16 +460,16 @@ namespace ConsoleApp
         }
         private static IClassifierService RandomForestClassifier()
         {
-            int numberOfTrees = 3;
+            int numberOfTrees = 100;
             numberOfTrees = TryReadValueFromConsole("Enter num Trees", numberOfTrees);
 
             int maxDepth = 5;
             maxDepth = TryReadValueFromConsole("Enter max depth", maxDepth);
 
-            int minSize = 3;
+            int minSize = 1;
             minSize = TryReadValueFromConsole("Enter min size", minSize);
 
-            double partOfTrafficDataRatio = 0.5;
+            double partOfTrafficDataRatio = 0.2;
             partOfTrafficDataRatio = TryReadValueFromConsole("Enter part of traffic data ratio", partOfTrafficDataRatio);
 
             Console.WriteLine("Initialization random forest...");
@@ -477,25 +477,25 @@ namespace ConsoleApp
         }
         private static IClassifierService XGBoostClassifier()
         {
-            int rounds = 5;
+            int rounds = 100;
             rounds = TryReadValueFromConsole("Enter rounds", rounds);
 
-            int maxDepth = 10;
+            int maxDepth = 3;
             maxDepth = TryReadValueFromConsole("Enter max depth", maxDepth);
 
-            int minSize = 3;
+            int minSize = 1;
             minSize = TryReadValueFromConsole("Enter min size", minSize);
 
-            double learningRate = 0.4;
+            double learningRate = 0.1;
             learningRate = TryReadValueFromConsole("Enter learning rate", learningRate);
 
-            double lambda = 1.5;
+            double lambda = 1;
             lambda = TryReadValueFromConsole("Enter lambda", lambda);
 
-            int gamma = 1;
+            int gamma = 0;
             gamma = TryReadValueFromConsole("Enter gamma", gamma);
 
-            double nFeatureRatio = 0.8;
+            double nFeatureRatio = 1;
             nFeatureRatio = TryReadValueFromConsole("Enter n feature ratio", nFeatureRatio);
 
             Console.WriteLine("Initialization XGBoost...");
