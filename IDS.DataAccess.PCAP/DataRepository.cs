@@ -692,11 +692,11 @@ namespace IDS.DataAccess.PCAP
                     {
                         int j = 0;
                         for (j = 0; j < srvDiffHostCount; j++)
-                            if (services[j].ToString() == connections[i][3].ToString()) // dstIp
+                            if (srvHosts[j].ToString() == connections[i][3].ToString()) // dstIp
                                 break;
                         if (j == srvDiffHostCount)
                         {
-                            services.Add(connections[i][3]); // dstIp
+                            srvHosts.Add(connections[i][3]); // dstIp
                             srvDiffHostCount++;
                         }
                     }
