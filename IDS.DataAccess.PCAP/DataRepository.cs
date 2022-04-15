@@ -114,9 +114,9 @@ namespace IDS.DataAccess.PCAP
                     connections[i][19].ToString(), // dstTtl
                     connections[i][20].ToString(), // srcLoad
                     connections[i][21].ToString(), // dstLoad
-                    contentData[0].ToString(), // hot
-                    contentData[2].ToString(), // loggedIn
-                    contentData[5].ToString(), // suAttempted
+                    contentData[0].ToString(), // numFailedLogins
+                    contentData[1].ToString(), // loggedIn
+                    contentData[4].ToString(), // rootShell
                     contentData[6].ToString(), // numRoot
                     hostTraffic[7].ToString(), // srvRerrorRate
                     hostTraffic[8].ToString(), // srvDiffHostRate
