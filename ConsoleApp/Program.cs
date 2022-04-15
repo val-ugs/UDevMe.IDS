@@ -218,45 +218,86 @@ namespace ConsoleApp
             elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
             Console.WriteLine("\nData normalization time: " + elapsedTime);
 
-            IClassifierService classifierService = GetClassifier();
-            
-            stopWatch.Restart();
-            Console.WriteLine("Training...");
-            classifierService.Train(trainTrafficData);
-            stopWatch.Stop();
-            ts = stopWatch.Elapsed;
-            elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}\n", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
-            Console.WriteLine("\nTraining time: " + elapsedTime);
-
-            stopWatch.Restart();
-            Console.WriteLine("Predicting...");
-            List<int> result = classifierService.Predict(testTrafficData);
-            stopWatch.Stop();
-            ts = stopWatch.Elapsed;
-            elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
-            Console.WriteLine("\nPrediction time: " + elapsedTime);
-
-            int metricNumber;
             while (true)
             {
-                Console.WriteLine();
-                Console.WriteLine("Select metric:");
-                int i = 1;
-                foreach (Metric metricName in Enum.GetValues(typeof(Metric)))
-                    Console.WriteLine(i++ + ": " + metricName);
-                Console.WriteLine();
-                Console.Write("-- Please choose metric (number): ");
-                if (Int32.TryParse(Console.ReadLine(), out metricNumber))
-                    if (metricNumber > 0 && metricNumber <= i)
+                IClassifierService classifierService = GetClassifier();
+
+                stopWatch.Restart();
+                Console.WriteLine("Training...");
+                classifierService.Train(trainTrafficData);
+                stopWatch.Stop();
+                ts = stopWatch.Elapsed;
+                elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}\n", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+                Console.WriteLine("\nTraining time: " + elapsedTime);
+
+                stopWatch.Restart();
+                Console.WriteLine("Predicting...");
+                List<int> result = classifierService.Predict(testTrafficData);
+                stopWatch.Stop();
+                ts = stopWatch.Elapsed;
+                elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+                Console.WriteLine("\nPrediction time: " + elapsedTime);
+
+                while (true)
+                {
+                    int metricNumber;
+                    while (true)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("Select metric:");
+                        int i = 1;
+                        foreach (Metric metricName in Enum.GetValues(typeof(Metric)))
+                            Console.WriteLine(i++ + ": " + metricName);
+                        Console.WriteLine();
+                        Console.Write("-- Please choose metric (number): ");
+                        if (Int32.TryParse(Console.ReadLine(), out metricNumber))
+                            if (metricNumber > 0 && metricNumber <= i)
+                                break;
+                    }
+
+                    Metric metric = (Metric)Enum.ToObject(typeof(Metric), metricNumber - 1);
+                    double accuracy = CalculateAccuracyByMetric(metric, trueLabels, result);
+
+                    Console.WriteLine();
+                    Console.WriteLine("Accuracy: {0}", accuracy);
+
+                    bool tryAnotherMetric;
+                    while (true)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("Try another metric? (yes, no)");
+                        string text = Console.ReadLine();
+                        if (text.ToUpper() == "yes".ToUpper() || text.ToUpper() == "no".ToUpper())
+                        {
+                            if (text.ToUpper() == "yes".ToUpper())
+                                tryAnotherMetric = true;
+                            else
+                                tryAnotherMetric = false;
+                            break;
+                        }
+                    }
+                    if (tryAnotherMetric == false)
                         break;
+                }
+
+                bool tryAnotherClassifier;
+                while (true)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Try another classifier? (yes, no)");
+                    string text = Console.ReadLine();
+                    if (text.ToUpper() == "yes".ToUpper() || text.ToUpper() == "no".ToUpper())
+                    {
+                        if (text.ToUpper() == "yes".ToUpper())
+                            tryAnotherClassifier = true;
+                        else
+                            tryAnotherClassifier = false;
+                        break;
+                    }
+                }
+                if (tryAnotherClassifier == false)
+                    break;
             }
-
-            Metric metric = (Metric)Enum.ToObject(typeof(Metric), metricNumber - 1);
-            double accuracy = CalculateAccuracyByMetric(metric, trueLabels, result);
-
-            Console.WriteLine();
-            Console.WriteLine("Accuracy: {0}", accuracy);
-            Console.ReadLine();
         }
 
         private static string GetFilename(string[] ListOfFilenames, bool isTrain)
