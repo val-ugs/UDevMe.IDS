@@ -121,9 +121,8 @@ namespace ConsoleApp
                                                            min: 1, max: trainTrafficData.Samples.Count);
             trainTrafficData.Samples = trainTrafficData.Samples.Take(trainNumberOfSamples).ToList();
 
-            NormalizeFeaturesService normalizeFeaturesService = GetNormalizeFeaturesService();
-            if (normalizeFeaturesService != null)
-                trainTrafficData.Samples = normalizeFeaturesService.NormalizeTrainSamples(trainTrafficData.Samples);
+            NormalizeFeaturesService normalizeFeaturesService = new NormalizeFeaturesService(0, 1);
+            trainTrafficData.Samples = normalizeFeaturesService.NormalizeTrainSamples(trainTrafficData.Samples);
 
             IClassifierService classifierService = GetClassifier();
             classifierService.Train(trainTrafficData);
@@ -150,8 +149,7 @@ namespace ConsoleApp
                     {
                         TrafficData testTrafficData = trafficDataConverterService.ConvertTestData(testData, hasLabel: false);
 
-                        if (normalizeFeaturesService != null)
-                            testTrafficData.Samples = normalizeFeaturesService.NormalizeTestSamples(testTrafficData.Samples);
+                        testTrafficData.Samples = normalizeFeaturesService.NormalizeTestSamples(testTrafficData.Samples);
 
                         List<int> labels = classifierService.Predict(testTrafficData);
                         List<string> labelNames = labels.Select(l => trafficDataConverterService.GetNameByLabel(l)).ToList();
@@ -212,7 +210,7 @@ namespace ConsoleApp
             List<int> trueLabels = testTrafficData.Samples.Select(s => s.Label).ToList();
 
             stopWatch.Restart();
-            NormalizeFeaturesService normalizeFeaturesService = GetNormalizeFeaturesService();
+            NormalizeFeaturesService normalizeFeaturesService = new NormalizeFeaturesService(0, 1);
             trainTrafficData.Samples = normalizeFeaturesService.NormalizeTrainSamples(trainTrafficData.Samples);
             testTrafficData.Samples = normalizeFeaturesService.NormalizeTestSamples(testTrafficData.Samples);
             stopWatch.Stop();
@@ -336,25 +334,6 @@ namespace ConsoleApp
             }
 
             return new TrafficDataConverterService(dataSource, classificationType, hasOneHotEncode);
-        }
-
-        private static NormalizeFeaturesService GetNormalizeFeaturesService()
-        {
-            while (true)
-            {
-                Console.WriteLine();
-                Console.WriteLine("Normalize? (yes, no)");
-                string text = Console.ReadLine();
-                if (text.ToUpper() == "yes".ToUpper() || text.ToUpper() == "no".ToUpper())
-                {
-                    if (text.ToUpper() == "yes".ToUpper())
-                        return new NormalizeFeaturesService(0, 1);
-                    else
-                        break;
-                }
-            }
-
-            return null;
         }
 
         private static DataSource DefineDataSource(string filename)
