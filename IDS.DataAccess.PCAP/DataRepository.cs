@@ -555,14 +555,17 @@ namespace IDS.DataAccess.PCAP
                         if (loggedIn == 1)
                         {
                             if (command.Contains("#"))
+                            {
                                 rootShell = 1;
+                                numRoot++;
+                            }
                         }   
                         else
                         {
                             if (command == "Last login")
                                 loggedIn = 1;
                             if (command == "failed")
-                                numFailedLogins += 1;
+                                numFailedLogins++;
                         }  
                     }
                 }
