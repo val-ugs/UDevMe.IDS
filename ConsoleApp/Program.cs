@@ -101,6 +101,7 @@ namespace ConsoleApp
             string pcapFilename = "AUTO";
             int captureTime = 30000; // In milliseconds (1 minute = 60000 milliseconds)
             string[] ListOfCsvFilenames = _csvDataService.GetFilenameList();
+            ListOfCsvFilenames = ListOfCsvFilenames.Where(f => f.StartsWith(DataSource.RealTime.ToString().ToUpper())).ToArray();
 
             if (ListOfCsvFilenames.Length == 0)
             {
