@@ -41,6 +41,8 @@ namespace ConsoleApp
         private static DataService _csvDataService;
         private static DataService _pcapDataService;
 
+        private static string _reservedPcapFilename = "AUTO";
+
         private static CaptureFileWriterDevice captureFileWriter;
         private static int _packetIndex_option;
 
@@ -98,7 +100,6 @@ namespace ConsoleApp
         private static void DetectIntrusionsInRealtime()
         {
             // Prepare
-            string pcapFilename = "AUTO";
             int captureTime = 30000; // In milliseconds (1 minute = 60000 milliseconds)
             string[] ListOfCsvFilenames = _csvDataService.GetFilenameList();
             ListOfCsvFilenames = ListOfCsvFilenames.Where(f => f.StartsWith(DataSource.RealTime.ToString().ToUpper())).ToArray();
@@ -129,8 +130,8 @@ namespace ConsoleApp
 
             LibPcapLiveDevice selectedDevice = SelectDevice();
 
-            string ext = (pcapFilename.EndsWith(".pcap") || pcapFilename.EndsWith(".pcapng")) ? "" : ".pcap";
-            pcapFilename = DataSource.RealTime.ToString().ToUpper() + "_" + pcapFilename + ext;
+            string ext = (_reservedPcapFilename.EndsWith(".pcap") || _reservedPcapFilename.EndsWith(".pcapng")) ? "" : ".pcap";
+            string pcapFilename = DataSource.RealTime.ToString().ToUpper() + "_" + _reservedPcapFilename + ext;
 
             string logFilename = "log.log";
             StringBuilder log = new StringBuilder();
@@ -667,7 +668,9 @@ namespace ConsoleApp
             List<string> selectedPcapFilenames = new List<string>();
             List<string[]> newData = new List<string[]>();
 
-            pcapFilenames = pcapFilenames.Where(f => f.ToUpper().StartsWith(DataSource.RealTime.ToString().ToUpper())).ToArray();
+            pcapFilenames = pcapFilenames.Where(f => f.ToUpper().StartsWith(DataSource.RealTime.ToString().ToUpper()))
+                                         .Where(f => f.ToUpper().Contains(_reservedPcapFilename) == false)
+                                         .ToArray();
             if (pcapFilenames.Length == 0)
             {
                 Console.WriteLine();
