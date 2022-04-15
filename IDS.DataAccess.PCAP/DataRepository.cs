@@ -116,57 +116,14 @@ namespace IDS.DataAccess.PCAP
                     connections[i][21].ToString(), // dstLoad
                     contentData[0].ToString(), // numFailedLogins
                     contentData[1].ToString(), // loggedIn
-                    contentData[4].ToString(), // rootShell
-                    contentData[6].ToString(), // numRoot
-                    hostTraffic[7].ToString(), // srvRerrorRate
-                    hostTraffic[8].ToString(), // srvDiffHostRate
-                    hostTraffic[13].ToString(), // dstHostSameSrcPortRate
-                    hostTraffic[14].ToString(), // dstHostSrvDiffHostRate
-                    hostTraffic[15].ToString(), // dstHostSerrorRate
-                    hostTraffic[16].ToString(), // dstHostSrvSerrorRate
-
-                    /*
-                    connections[i][7].ToString(), // duration
-                    connections[i][8].ToString(), // protocol
-                    connections[i][9].ToString(), // service
-                    connections[i][10].ToString(), // flag
-                    connections[i][11].ToString(), // srcBytes
-                    connections[i][12].ToString(), // dstBytes
-                    connections[i][13].ToString(), // land
-                    connections[i][14].ToString(), // wrongFrag
-                    connections[i][15].ToString(), // urgent
-                    contentData[0].ToString(), // hot
-                    contentData[1].ToString(), // numFailedLogins
-                    contentData[2].ToString(), // loggedIn
-                    contentData[3].ToString(), // numCompromised
-                    contentData[4].ToString(), // rootShell
-                    contentData[5].ToString(), // suAttempted
-                    contentData[6].ToString(), // numRoot
-                    contentData[7].ToString(), // numFileCreations
-                    contentData[8].ToString(), // numAccessFiles
-                    contentData[9].ToString(), // numOutboundCmds
-                    contentData[10].ToString(), // isHotLogin
-                    contentData[11].ToString(), // isGuestLogin
-                    hostTraffic[0].ToString(), // count
-                    hostTraffic[1].ToString(), // serrorRate
-                    hostTraffic[2].ToString(), // rerrorRate
-                    hostTraffic[3].ToString(), // sameSrvRate
-                    hostTraffic[4].ToString(), // diffSrvRate
-                    hostTraffic[5].ToString(), // srvCount
-                    hostTraffic[6].ToString(), // srvSerrorRate
-                    hostTraffic[7].ToString(), // srvRerrorRate
-                    hostTraffic[8].ToString(), // srvDiffHostRate
-                    hostTraffic[9].ToString(), // dstHostCount
-                    hostTraffic[10].ToString(), // dstHostSrvCount
-                    hostTraffic[11].ToString(), // dstHostSameSrvRate
-                    hostTraffic[12].ToString(), // dstHostDiffSrvRate
-                    hostTraffic[13].ToString(), // dstHostSameSrcPortRate
-                    hostTraffic[14].ToString(), // dstHostSrvDiffHostRate
-                    hostTraffic[15].ToString(), // dstHostSerrorRate
-                    hostTraffic[16].ToString(), // dstHostSrvSerrorRate
-                    hostTraffic[17].ToString(), // dstHostRerrorRate
-                    hostTraffic[18].ToString() // dstHostSrvRerrorRate
-                    */
+                    contentData[2].ToString(), // rootShell
+                    contentData[3].ToString(), // numRoot
+                    hostTraffic[0].ToString(), // srvRerrorRate
+                    hostTraffic[1].ToString(), // srvDiffHostRate
+                    hostTraffic[2].ToString(), // dstHostSameSrcPortRate
+                    hostTraffic[3].ToString(), // dstHostSrvDiffHostRate
+                    hostTraffic[4].ToString(), // dstHostSerrorRate
+                    hostTraffic[5].ToString(), // dstHostSrvSerrorRate
                 });
             }
 
@@ -529,18 +486,10 @@ namespace IDS.DataAccess.PCAP
 
         private object[] GetContentData(List<Packet> packets)
         {
-            int hot = 0;
             int numFailedLogins = 0;
             int loggedIn = 0;
-            int numCompromised = 0;
             int rootShell = 0;
-            int suAttempted = 0;
             int numRoot = 0;
-            int numFileCreations = 0;
-            int numAccessFiles = 0;
-            int numOutboundCmds = 0;
-            int isHotLogin = 0;
-            int isGuestLogin = 0;
 
             for (int i = 0; i < packets.Count; i++)
             {
@@ -573,52 +522,30 @@ namespace IDS.DataAccess.PCAP
 
             return new object[]
             {
-                hot, numFailedLogins, loggedIn, numCompromised, rootShell, suAttempted, numRoot,
-                numFileCreations, numAccessFiles, numOutboundCmds, isHotLogin, isGuestLogin
+                numFailedLogins, loggedIn,rootShell, numRoot
             };
         }
 
         private object[] DeriveHostFeatures(object[] currentConnection, int index, List<object[]> connections, int hosts)
         {
-            List<object> services = new List<object>();
             List<object> srvHosts = new List<object>();
-            List<object> dstServices = new List<object>();
             List<object> dstSrvHosts = new List<object>();
 
-            int count = 0;
-            int serrorCount = 0;
-            int rerrorCount = 0;
-            int sameSrvCount = 0;
-            int diffSrvCount = 0;
-            double serrorRate = 0;
-            double rerrorRate = 0;
-            double sameSrvRate = 0;
-            double diffSrvRate = 0;
             int srvCount = 0;
-            int srvSerrorCount = 0;
             int srvRerrorCount = 0;
             int srvDiffHostCount = 0;
-            double srvSerrorRate = 0;
             double srvRerrorRate = 0;
             double srvDiffHostRate = 0;
             int dstHostCount = 0;
             int dstHostSrvCount = 0;
             int dstHostSerrorCount = 0;
-            int dstHostRerrorCount = 0;
-            int dstHostSameSrvCount = 0;
-            int dstHostDiffSrvCount = 0;
             int dstHostSameSrcPortCount = 0;
             int dstHostSrvSerrorCount = 0;
-            int dstHostSrvRerrorCount = 0;
             int dstHostSrvDiffHostCount = 0;
-            double dstHostSameSrvRate = 0;
-            double dstHostDiffSrvRate = 0;
             double dstHostSameSrcPortRate = 0;
             double dstHostSrvDiffHostRate = 0;
             double dstHostSerrorRate = 0;
             double dstHostSrvSerrorRate = 0;
-            double dstHostRerrorRate = 0;
-            double dstHostSrvRerrorRate = 0;
 
             DateTime endTimestamp = DateTime.Parse(connections[connections.Count - 1][0].ToString());
 
@@ -629,44 +556,6 @@ namespace IDS.DataAccess.PCAP
 
                 DateTime currentTimestamp = DateTime.Parse(currentConnection[0].ToString());
                 
-                if (currentConnection[3].ToString() == connections[i][3].ToString() // dstIp
-                    && currentTimestamp >= endTimestamp.AddSeconds(-2)) // timestamp
-                {
-                    count++;
-
-                    // Count various errors
-                    if (currentConnection[10].ToString() != "SF") // statusFlag
-                    {
-                        if (connections[i][10].ToString().Contains("S"))
-                            serrorCount++;
-                        else if (connections[i][10].ToString().Contains("R"))
-                            rerrorCount++;
-                    }
-
-                    // Count the # of same services
-                    if (currentConnection[9].ToString() == connections[i][9].ToString()) // service
-                        sameSrvCount++;
-
-                    // Count the # of unique (different) services
-                    if (count == 1)
-                    {
-                        services.Add(connections[i][8]); // protocol
-                        diffSrvCount++;
-                    }
-                    else
-                    {
-                        int j = 0;
-                        for (j = 0; j < diffSrvCount; j++)
-                            if (services[j].ToString() == connections[i][8].ToString()) // protocol
-                                break;
-                        if (j == diffSrvCount)
-                        {
-                            services.Add(connections[i][8]);
-                            diffSrvCount++;
-                        }
-                    }
-                }
-
                 // For the same service
                 if (currentConnection[9].ToString() == connections[i][9].ToString() // service
                     && currentTimestamp > endTimestamp.AddSeconds(-2)) // timestamp 
@@ -676,9 +565,7 @@ namespace IDS.DataAccess.PCAP
                     // Count various errors
                     if (connections[i][10].ToString() != "SF") // statusFlag
                     {
-                        if (connections[i][10].ToString().Contains("S"))
-                            srvSerrorCount++;
-                        else if (connections[i][10].ToString().Contains("R"))
+                        if (connections[i][10].ToString().Contains("R"))
                             srvRerrorCount++;
                     }
 
@@ -712,31 +599,6 @@ namespace IDS.DataAccess.PCAP
                     {
                         if (connections[i][10].ToString().Contains("S"))
                             dstHostSerrorCount++;
-                        else if (connections[i][10].ToString().Contains("R"))
-                            dstHostRerrorCount++;
-                    }
-
-                    // Count the # of same services
-                    if (currentConnection[9].ToString() == connections[i][9].ToString()) // service
-                        dstHostSameSrvCount++;
-
-                    // Count the # of unique (different) services
-                    if (dstHostCount == 1)
-                    {
-                        dstServices.Add(connections[i][8]); // protocol
-                        dstHostDiffSrvCount++;
-                    }
-                    else
-                    {
-                        int j = 0;
-                        for (j = 0; j < dstHostDiffSrvCount; j++)
-                            if (dstServices[j].ToString() == connections[i][8].ToString()) // protocol
-                                break;
-                        if (j == dstHostDiffSrvCount)
-                        {
-                            dstServices.Add(connections[i][8]); 
-                            dstHostDiffSrvCount++;
-                        }
                     }
 
                     if (currentConnection[2].ToString() == connections[i][2].ToString()) // srcPort
@@ -753,8 +615,6 @@ namespace IDS.DataAccess.PCAP
                     {
                         if (connections[i][10].ToString().Contains("S"))
                             dstHostSrvSerrorCount++;
-                        else if (connections[i][10].ToString().Contains("R"))
-                            dstHostSrvRerrorCount++;
                     }
 
                     // Count the # of unique (different) services
@@ -777,24 +637,10 @@ namespace IDS.DataAccess.PCAP
                     }
                 }
             }
-
             // End of for loop
-            if (count > 0)
-            {
-                serrorRate = (double)serrorCount / count;
-                rerrorRate = (double)rerrorCount / count;
-
-                if (diffSrvCount > 1)
-                    diffSrvRate = (double)diffSrvCount / count;
-                else
-                    diffSrvRate = 0;
-
-                sameSrvRate = (double)sameSrvCount / count;
-            }
 
             if (srvCount > 0)
             {
-                srvSerrorRate = (double)srvSerrorCount / srvCount;
                 srvRerrorRate = (double)srvRerrorCount / srvCount;
 
                 if (srvDiffHostCount > 1)
@@ -806,21 +652,13 @@ namespace IDS.DataAccess.PCAP
             if (dstHostCount > 0)
             {
                 dstHostSerrorRate = (double)dstHostSerrorCount / dstHostCount;
-                dstHostRerrorRate = (double)dstHostRerrorCount / dstHostCount;
 
-                if (dstHostDiffSrvCount > 1)
-                    dstHostDiffSrvRate = (double)dstHostDiffSrvCount / dstHostCount;
-                else
-                    dstHostDiffSrvRate = 0;
-
-                dstHostSameSrvRate = (double)dstHostSameSrvCount / dstHostCount;
                 dstHostSameSrcPortRate = (double)dstHostSameSrcPortCount / dstHostCount;
             }
 
             if (dstHostSrvCount > 0)
             {
                 dstHostSrvSerrorRate = (double)dstHostSrvSerrorCount / dstHostSrvCount;
-                dstHostSrvRerrorRate = (double)dstHostSrvRerrorCount / dstHostSrvCount;
 
                 if (dstHostSrvDiffHostCount > 1)
                     dstHostSrvDiffHostRate = (double)dstHostSrvDiffHostCount / dstHostSrvCount;
@@ -830,11 +668,8 @@ namespace IDS.DataAccess.PCAP
 
             return new object[]
             {
-                count, serrorRate, rerrorRate, sameSrvRate, diffSrvRate,
-                srvCount, srvSerrorRate, srvRerrorRate, srvDiffHostRate,
-                dstHostCount, dstHostSrvCount, dstHostSameSrvRate, dstHostDiffSrvRate,
-                dstHostSameSrcPortRate, dstHostSrvDiffHostRate, dstHostSerrorRate,
-                dstHostSrvSerrorRate, dstHostRerrorRate, dstHostSrvRerrorRate
+                srvRerrorRate, srvDiffHostRate, dstHostSameSrcPortRate,
+                dstHostSrvDiffHostRate, dstHostSerrorRate, dstHostSrvSerrorRate
             };
         }
     }
