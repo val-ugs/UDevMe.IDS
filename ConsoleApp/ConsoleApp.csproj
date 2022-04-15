@@ -16,7 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Logs\" />
+    <None Update="Logs\log.log">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -19,7 +19,7 @@ namespace IDS.Tests
         public void Setup()
         {
             DataRepository csvDataRepository = new DataRepository(
-                new CsvSettings("..\\..\\..\\..\\IDS.DataAccess.CSV\\Data", ',')
+                new CsvSettings("..\\..\\..\\..\\IDS.DataAccess.CSV\\CsvData", ',')
             );
             _dataService = new DataService(csvDataRepository);
             _acuraccyMetricService = new AccuracyMetricService();

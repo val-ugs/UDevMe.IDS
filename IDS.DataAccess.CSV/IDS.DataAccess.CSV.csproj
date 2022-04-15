@@ -5,11 +5,32 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
+    <Folder Include="CsvData\" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\IDS.Domain\IDS.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="CsvData\KDDTest+.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="CsvData\KDDTrain+.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="CsvData\REALTIME_MyPcTrafficTestData.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="CsvData\REALTIME_MyPcTrafficTrainData.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="CsvData\UNSW_NB15_testing-set.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="CsvData\UNSW_NB15_training-set.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
+    <Folder Include="PcapData\" />
     <Folder Include="Configuration\" />
   </ItemGroup>
 
@@ -15,5 +15,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\IDS.Domain\IDS.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Configuration\services.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="PcapData\REALTIME_AUTO.pcap">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

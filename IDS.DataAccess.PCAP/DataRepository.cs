@@ -34,7 +34,7 @@ namespace IDS.DataAccess.PCAP
         private Dictionary<(string, int), string> FillServices()
         {
             Dictionary<(string, int), string> services = new Dictionary<(string, int), string>();
-            string path = "..\\..\\..\\..\\IDS.DataAccess.PCAP\\Configuration\\services.csv";
+            string path = Path.Combine(_path, "..", "Configuration", "services.csv");
 
             using (var reader = new StreamReader(path))
             {
@@ -59,7 +59,7 @@ namespace IDS.DataAccess.PCAP
 
         public List<string[]> GetData(string fileName, bool hasHeaderRow)
         {
-            string fullpath = _path + "\\" + fileName;
+            string fullpath = Path.Combine(_path, fileName);
             ICaptureDevice device;
 
             try

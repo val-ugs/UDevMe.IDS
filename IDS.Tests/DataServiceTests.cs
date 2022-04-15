@@ -19,7 +19,7 @@ namespace IDS.Tests
             string csvFile = "UNSW_NB15_training-set.csv";
 
             DataAccess.CSV.DataRepository csvDataRepository = new DataAccess.CSV.DataRepository(
-                new CsvSettings("..\\..\\..\\..\\IDS.DataAccess.CSV\\Data", ',')
+                new CsvSettings("..\\..\\..\\..\\IDS.DataAccess.CSV\\CsvData", ',')
             );
             DataService dataService = new DataService(csvDataRepository);
 
@@ -37,7 +37,7 @@ namespace IDS.Tests
             string pcapFile = "REALTIME_myTraffic.pcapng";
 
             DataAccess.PCAP.DataRepository csvDataRepository = new DataAccess.PCAP.DataRepository(
-                "..\\..\\..\\..\\IDS.DataAccess.PCAP\\Data"
+                "..\\..\\..\\..\\IDS.DataAccess.PCAP\\PcapData"
             );
             DataService dataService = new DataService(csvDataRepository);
 

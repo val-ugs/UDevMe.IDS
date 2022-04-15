@@ -33,9 +33,10 @@ namespace ConsoleApp
             F1Score
         }
 
-        private static readonly string _csvPath = "..\\..\\..\\..\\IDS.DataAccess.CSV\\Data";
-        private static readonly string _pcapPath = "..\\..\\..\\..\\IDS.DataAccess.PCAP\\Data";
-        private static readonly string _logFilePath = "..\\..\\..\\Logs";
+        private static readonly string _baseDirectory = System.AppDomain.CurrentDomain.BaseDirectory;
+        private static readonly string _csvPath = Path.Combine(_baseDirectory, "CsvData");
+        private static readonly string _pcapPath = Path.Combine(_baseDirectory, "PcapData");
+        private static readonly string _logFilePath = Path.Combine(_baseDirectory, "Logs");
         private static readonly char _delimiter = ',';
         private static DataService _csvDataService;
         private static DataService _pcapDataService;
@@ -166,7 +167,7 @@ namespace ConsoleApp
                             log.Append(String.Format(" Label Name: {0} - Count: {1};", statistic.LabelName, statistic.Count));
                         }
                         log.Append(Environment.NewLine);
-                        File.AppendAllText(_logFilePath + "\\" + logFilename, log.ToString());
+                        File.AppendAllText(Path.Combine(_logFilePath, logFilename), log.ToString());
                         log.Clear();
                     }
                 }
@@ -201,7 +202,7 @@ namespace ConsoleApp
 
             int trainNumberOfSamples = TryReadValueFromConsole("Enter train number of samples",
                                                            min: 1, max: trainTrafficData.Samples.Count);
-            int testNumberOfSamples = TryReadValueFromConsole("Enter test number of samples",
+            int testNumberOfSamples = TryReadValueFromConsole("\nEnter test number of samples",
                                                           min: 1, max: testTrafficData.Samples.Count);
 
             trainTrafficData.Samples = trainTrafficData.Samples.Take(trainNumberOfSamples).ToList();
@@ -255,6 +256,7 @@ namespace ConsoleApp
 
             Console.WriteLine();
             Console.WriteLine("Accuracy: {0}", accuracy);
+            Console.ReadLine();
         }
 
         private static string GetFilename(string[] ListOfFilenames, bool isTrain)
@@ -611,7 +613,7 @@ namespace ConsoleApp
                 
 
             // open the output file
-            captureFileWriter = new CaptureFileWriterDevice(_pcapPath + "\\" + filename);
+            captureFileWriter = new CaptureFileWriterDevice(Path.Combine(_pcapPath, filename));
             captureFileWriter.Open(device);
 
             // Start the capturing process
@@ -807,7 +809,7 @@ namespace ConsoleApp
             Console.WriteLine("Enter file name for new csv file?");
             string newFilename = Console.ReadLine();
             string ext = newFilename.EndsWith(".csv") ? "" : ".csv";
-            string fullPath = _csvPath + "\\" + DataSource.RealTime.ToString().ToUpper() + "_" + newFilename + ext;
+            string fullPath = Path.Combine(_csvPath, DataSource.RealTime.ToString().ToUpper() + "_" + newFilename + ext);
 
             using (var stream = File.Create(fullPath))
             {

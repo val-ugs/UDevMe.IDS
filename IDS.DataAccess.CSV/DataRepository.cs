@@ -25,7 +25,7 @@ namespace IDS.DataAccess.CSV
 
         public List<string[]> GetData(string fileName, bool hasHeaderRow)
         {
-            string fullPath = _path + "\\" + fileName;
+            string fullPath = Path.Combine(_path, fileName);
             List<string[]> outputData = new List<string[]>();
 
             using (var reader = new StreamReader(fullPath))
