@@ -817,7 +817,7 @@ namespace IDS.DataAccess.PCAP
                 dstHostSameSrcPortRate = (double)dstHostSameSrcPortCount / dstHostCount;
             }
 
-            if (srvCount > 0)
+            if (dstHostSrvCount > 0)
             {
                 dstHostSrvSerrorRate = (double)dstHostSrvSerrorCount / dstHostSrvCount;
                 dstHostSrvRerrorRate = (double)dstHostSrvRerrorCount / dstHostSrvCount;
