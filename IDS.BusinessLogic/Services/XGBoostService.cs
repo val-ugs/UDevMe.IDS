@@ -156,14 +156,6 @@ namespace IDS.BusinessLogic.Services
             }
         }
 
-        private int ToTerminal(XGBoostTreeNode node)
-        {
-            // Create list from sample labels
-            List<int> labels = node.Samples.Select(s => s.Label).ToList();
-            // Take max repeated label
-            return labels.GroupBy(l => l).OrderByDescending(l => l.Count()).First().Key;
-        }
-
         private double ComputeGamma(List<double> grad, List<double> hess)
         {
             return (- grad.Sum() / (hess.Sum() + _lambda));
@@ -202,6 +194,7 @@ namespace IDS.BusinessLogic.Services
         private int _gamma;
         private double _nFeaturesRatio;
 
+        private int _distinctLabelCount;
         private List<XGBoostTree> _trees;
         
         public XGBoost(int rounds, int maxDepth,
@@ -224,44 +217,137 @@ namespace IDS.BusinessLogic.Services
         public void Train(TrafficData trainTrafficData)
         {
             List<int> labels = trainTrafficData.Samples.Select(s => s.Label).ToList(); // All labels
-            List<double> basePreds = Enumerable.Repeat(1.0, trainTrafficData.Samples.Count).ToList(); // Fill 1
+            _distinctLabelCount = labels.Distinct().Count();
 
-            for (int i = 0; i < _rounds; i++)
+            List<double> basePreds;
+            if (_distinctLabelCount > 2)
             {
-                List<double> grad = Grad(basePreds, labels);
-                List<double> hess = Hess(basePreds);
-                XGBoostTree tree = new XGBoostTree(trainTrafficData, grad, hess, _maxDepth,
-                                                   _minSize, _lambda, _gamma, _nFeaturesRatio);
-                for (int j = 0; j < trainTrafficData.Samples.Count; j++)
+                basePreds = Enumerable.Repeat(0.0, trainTrafficData.Samples.Count * _distinctLabelCount).ToList(); // Fill 0
+
+                for (int i = 0; i < _rounds; i++)
                 {
-                    basePreds[j] += _learningRate * tree.Predict(trainTrafficData.Samples[j]);
+                    List<double> grad, hess;
+                    MulticlassGradHess(basePreds, labels, out grad, out hess);
+                    for (int j = 0; j < _distinctLabelCount; j++)
+                    {
+                        // Take grad and hess for current label
+                        List<double> currentGrad = grad.Where((x, index) => index % _distinctLabelCount == j).ToList();
+                        List<double> currentHess = hess.Where((x, index) => index % _distinctLabelCount == j).ToList();
+                        XGBoostTree tree = new XGBoostTree(trainTrafficData, currentGrad, currentHess, _maxDepth,
+                                                           _minSize, _lambda, _gamma, _nFeaturesRatio);
+                        _trees.Add(tree);
+                    }
+
+                    for (int j = 0; j < trainTrafficData.Samples.Count; j++)
+                        for (int k = 0; k < _distinctLabelCount; k++)
+                            basePreds[j * _distinctLabelCount + k] += _learningRate * _trees[i * _distinctLabelCount + k].Predict(trainTrafficData.Samples[j]);
                 }
-                _trees.Add(tree);
             }
-        }
-
-        private List<double> Grad(List<double> preds, List<int> labels)
-        {
-            List<double> grad = new List<double>(preds.Count);
-            double p;
-            for(int i = 0; i < preds.Count; i++)
+            else
             {
-                p = Sigmoid(preds[i]);
-                grad.Add(p - labels[i]);
+                basePreds = Enumerable.Repeat(1.0, trainTrafficData.Samples.Count).ToList(); // Fill 1
+
+                for (int i = 0; i < _rounds; i++)
+                {
+                    List<double> grad, hess;
+                    GradHess(basePreds, labels, out grad, out hess);
+                    XGBoostTree tree = new XGBoostTree(trainTrafficData, grad, hess, _maxDepth,
+                                                       _minSize, _lambda, _gamma, _nFeaturesRatio);
+
+                    for (int j = 0; j < trainTrafficData.Samples.Count; j++)
+                        basePreds[j] += _learningRate * tree.Predict(trainTrafficData.Samples[j]);
+
+                    _trees.Add(tree);
+                }
             }
-            return grad;
         }
 
-        private List<double> Hess(List<double> preds)
+        private void GradHess(List<double> preds, List<int> labels, out List<double> grad, out List<double> hess)
         {
-            List<double> hess = new List<double>(preds.Count);
+            grad = new List<double>(preds.Count);
+            hess = new List<double>(preds.Count);
             double p;
+
             for (int i = 0; i < preds.Count; i++)
             {
                 p = Sigmoid(preds[i]);
+                grad.Add(p - labels[i]);
                 hess.Add(p * (1 - p));
             }
-            return hess;
+        }
+
+        private void MulticlassGradHess(List<double> preds, List<int> labels, out List<double> grad, out List<double> hess)
+        {
+            grad = new List<double>(preds.Count);
+            hess = new List<double>(preds.Count);
+
+            for (int i = 0; i < labels.Count; i++)
+            {
+                double[] p = Softmax(preds.Skip(i * _distinctLabelCount).Take(_distinctLabelCount).ToArray());
+
+                for (int j = 0; j < _distinctLabelCount; j++)
+                {
+                    grad.Add(j == labels[i] ? (p[j] - 1) : p[j]);
+                    hess.Add(2 * p[j] * (1 - p[j]));
+                }
+            }
+
+        }
+
+        public List<int> Predict(TrafficData trafficData)
+        {
+            List<double> preds = Enumerable.Repeat(0.0, trafficData.Samples.Count).ToList(); // fill 0
+
+            if (_distinctLabelCount > 2)
+            {
+                List<double> predictedProbas = Enumerable.Repeat(0.0, trafficData.Samples.Count * _distinctLabelCount).ToList(); // fill 0
+
+                for (int i = 0; i < _trees.Count; i++)
+                {
+                    for (int j = 0; j < trafficData.Samples.Count; j++)
+                    {
+                        predictedProbas[i % _distinctLabelCount + j * _distinctLabelCount] += _learningRate * _trees[i].Predict(trafficData.Samples[j]);
+                    }
+                }
+
+                for (int i = 0; i < preds.Count; i++)
+                {
+                    List<double> currentPredictedProbas = predictedProbas.Skip(i * _distinctLabelCount)
+                                                                         .Take(_distinctLabelCount)
+                                                                         .ToList();
+
+                    currentPredictedProbas = Softmax(currentPredictedProbas.ToArray()).ToList();
+
+                    preds[i] = currentPredictedProbas.IndexOf(currentPredictedProbas.Max());
+                }
+            }
+            else
+            {
+                foreach (XGBoostTree tree in _trees)
+                {
+                    for (int i = 0; i < preds.Count; i++)
+                    {
+                        preds[i] += _learningRate * tree.Predict(trafficData.Samples[i]);
+                    }
+                }
+
+                List<double> predictedProbas = new List<double>();
+
+                for (int i = 0; i < preds.Count; i++)
+                {
+                    predictedProbas.Add(Sigmoid(1 + preds[i]));
+                }
+
+                for (int i = 0; i < preds.Count; i++)
+                {
+                    if (predictedProbas[i] > predictedProbas.Average())
+                        preds[i] = 1;
+                    else
+                        preds[i] = 0;
+                }
+            }
+
+            return preds.Select(p => (int)p).ToList();
         }
 
         private double Sigmoid(double x)
@@ -269,34 +355,21 @@ namespace IDS.BusinessLogic.Services
             return 1 / (1 + Math.Exp(-x));
         }
 
-        public List<int> Predict(TrafficData trafficData)
+        private double[] Softmax(double[] x)
         {
-            List<double> preds = Enumerable.Repeat(0.0, trafficData.Samples.Count).ToList(); // fill 0
-
-            foreach (XGBoostTree tree in _trees)
+            double[] p = new double[x.Length];
+            double sum = 0;
+            for (int i = 0; i < x.Length; i++)
             {
-                for(int i = 0; i < preds.Count; i++)
-                {
-                    preds[i] += _learningRate * tree.Predict(trafficData.Samples[i]);
-                }
+                p[i] = Math.Exp(x[i]);
+                sum += p[i];
+            }
+            for (int i = 0; i < p.Length; i++)
+            {
+                p[i] /= sum;
             }
 
-            List<double> predictedProbas = new List<double>();
-
-            for (int i = 0;i < preds.Count;i++)
-            {
-                predictedProbas.Add(Sigmoid(1 + preds[i]));
-            }
-
-            for (int i = 0; i < preds.Count; i++)
-            {
-                if (predictedProbas[i] > predictedProbas.Average())
-                    preds[i] = 1;
-                else
-                    preds[i] = 0;
-            }
-
-            return preds.Select(p => (int)p).ToList();
+            return p;
         }
     }
 
