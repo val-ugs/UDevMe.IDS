@@ -340,7 +340,7 @@ namespace IDS.BusinessLogic.Services
 
                 for (int i = 0; i < preds.Count; i++)
                 {
-                    if (predictedProbas[i] > predictedProbas.Average())
+                    if (predictedProbas[i] > 0.5)
                         preds[i] = 1;
                     else
                         preds[i] = 0;
