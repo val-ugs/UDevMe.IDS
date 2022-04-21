@@ -83,34 +83,36 @@ namespace IDS.BusinessLogic.Services
 
         public TrafficData ConvertTrainData(List<string[]> data)
         {
-            if (_hasOneHotEncode)
-                _oneHotEncoder = new OneHotEncoder(data);
-
-            return Convert(data, hasLabel: true);
+            return Convert(data, hasLabel: true, isTrain: true);
         }
 
         public TrafficData ConvertTestData(List<string[]> data, bool hasLabel)
         {
-            return Convert(data, hasLabel);
+            return Convert(data, hasLabel, isTrain: false);
         }
 
-        private TrafficData Convert(List<string[]> data, bool hasLabel)
+        private TrafficData Convert(List<string[]> data, bool hasLabel, bool isTrain)
         {
             switch (_dataSource)
             {
                 case DataSource.RealTime:
-                    return ConvertFromData(data, hasLabel);
+                    return ConvertFromData(data, hasLabel, isTrain);
                 case DataSource.Kdd:
+                    data = data.Select(d => d.SkipLast(1).ToArray()).ToList(); // Remove last element in data row
+                    return ConvertFromData(data, hasLabel, isTrain);
                 case DataSource.Unsw:
-                    data = data.Select(d => d.Take(d.Count() - 1).ToArray()).ToList(); // Remove last element in data row
-                    return ConvertFromData(data, hasLabel);
+                    data = data.Select(d => d.Skip(1).SkipLast(1).ToArray()).ToList(); // Remove first and last element in data row
+                    return ConvertFromData(data, hasLabel, isTrain);
             }
 
             return null;
         }
 
-        private TrafficData ConvertFromData(List<string[]> data, bool hasLabel)
+        private TrafficData ConvertFromData(List<string[]> data, bool hasLabel, bool isTrain)
         {
+            if (_hasOneHotEncode && isTrain)
+                _oneHotEncoder = new OneHotEncoder(data);
+
             TrafficData trafficData = new TrafficData(data.Count);
             List<string> labelNamesForCurrentData = null;
 
