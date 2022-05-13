@@ -188,7 +188,7 @@ namespace ConsoleApp
 
             string trainFilename = GetFilename(ListOfCsvFilenames, isTrain: true);
             List<string[]> trainData = GetDataFromCsvFile(trainFilename);
-            string testFilename = GetFilename(ListOfCsvFilenames, isTrain: true);
+            string testFilename = GetFilename(ListOfCsvFilenames, isTrain: false);
             List<string[]> testData = GetDataFromCsvFile(testFilename);
 
             stopWatch.Start();
@@ -501,10 +501,10 @@ namespace ConsoleApp
         }
         private static IClassifierService RandomForestClassifier()
         {
-            int numberOfTrees = 100;
+            int numberOfTrees = 5;
             numberOfTrees = TryReadValueFromConsole("Enter num Trees", numberOfTrees);
 
-            int maxDepth = 5;
+            int maxDepth = 3;
             maxDepth = TryReadValueFromConsole("Enter max depth", maxDepth);
 
             int minSize = 1;
@@ -518,25 +518,25 @@ namespace ConsoleApp
         }
         private static IClassifierService XGBoostClassifier()
         {
-            int rounds = 100;
+            int rounds = 5;
             rounds = TryReadValueFromConsole("Enter rounds", rounds);
 
-            int maxDepth = 3;
+            int maxDepth = 5;
             maxDepth = TryReadValueFromConsole("Enter max depth", maxDepth);
 
             int minSize = 1;
             minSize = TryReadValueFromConsole("Enter min size", minSize);
 
-            double learningRate = 0.1;
+            double learningRate = 0.4;
             learningRate = TryReadValueFromConsole("Enter learning rate", learningRate);
 
-            double lambda = 1;
+            double lambda = 1.5;
             lambda = TryReadValueFromConsole("Enter lambda", lambda);
 
-            int gamma = 0;
+            int gamma = 1;
             gamma = TryReadValueFromConsole("Enter gamma", gamma);
 
-            double nFeatureRatio = 1;
+            double nFeatureRatio = 0.2;
             nFeatureRatio = TryReadValueFromConsole("Enter n feature ratio", nFeatureRatio);
 
             Console.WriteLine("Initialization XGBoost...");
