@@ -161,7 +161,8 @@ namespace ConsoleApp
                                         Count = x.Count()
                                     });
 
-                        log.Append(DateTime.Now.ToString());
+                        log.Append(DateTime.Now.ToString("MMM dd HH:mm:ss ", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")));
+                        log.Append("hostname IDS:");
                         foreach (var statistic in statistics)
                         {
                             log.Append(String.Format(" Label Name: {0} - Count: {1};", statistic.LabelName, statistic.Count));
@@ -672,7 +673,7 @@ namespace ConsoleApp
                 var packet = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
                 var ethernetPacket = (EthernetPacket)packet;
 
-                Console.WriteLine("{0} At: {1}:{2}: MAC:{3} -> MAC:{4}",
+                Console.WriteLine("{0} At: UTC/GMT {1}:{2}: MAC:{3} -> MAC:{4}",
                                   _packetIndex_option,
                                   rawPacket.Timeval.Date.ToString(),
                                   rawPacket.Timeval.Date.Millisecond,
