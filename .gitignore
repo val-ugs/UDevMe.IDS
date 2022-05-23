@@ -362,5 +362,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+
 *.csv
 *.pcap
+!/*.csv
+!/IDS.DataAccess.CSV/CsvData/REALTIME_MyPcTrafficTrainData.csv
+!/IDS.DataAccess.CSV/CsvData/REALTIME_MyPcTrafficTestData.csv
