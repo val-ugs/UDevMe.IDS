@@ -1,15 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31702.278
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDS.API", "IDS.API\IDS.API.csproj", "{2BEF9CF3-5725-4A1C-8809-B4068B029123}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IDS.API", "IDS.API\IDS.API.csproj", "{2BEF9CF3-5725-4A1C-8809-B4068B029123}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDS.Domain", "IDS.Domain\IDS.Domain.csproj", "{95157E50-6D38-410E-A8CC-AA0E5D849860}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IDS.Domain", "IDS.Domain\IDS.Domain.csproj", "{95157E50-6D38-410E-A8CC-AA0E5D849860}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDS.BusinessLogic", "IDS.BusinessLogic\IDS.BusinessLogic.csproj", "{AC27CBED-6BF7-43A7-B764-811D6080DF03}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IDS.BusinessLogic", "IDS.BusinessLogic\IDS.BusinessLogic.csproj", "{AC27CBED-6BF7-43A7-B764-811D6080DF03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDS.Tests", "IDS.Tests\IDS.Tests.csproj", "{DC7B51ED-9EC4-4BEE-8AAF-52E82252A0C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IDS.Tests", "IDS.Tests\IDS.Tests.csproj", "{DC7B51ED-9EC4-4BEE-8AAF-52E82252A0C8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "ConsoleApp\ConsoleApp.csproj", "{3C2D5ABC-7A41-45F8-82C0-42F2A6412750}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IDS.DataAccess.CSV", "IDS.DataAccess.CSV\IDS.DataAccess.CSV.csproj", "{6C55220F-4E2D-4119-8A36-AEA558E10DDA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDS.DataAccess.PCAP", "IDS.DataAccess.PCAP\IDS.DataAccess.PCAP.csproj", "{C81522EF-DCC8-4576-9808-C9152C327249}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +39,18 @@ Global
 		{DC7B51ED-9EC4-4BEE-8AAF-52E82252A0C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC7B51ED-9EC4-4BEE-8AAF-52E82252A0C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC7B51ED-9EC4-4BEE-8AAF-52E82252A0C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C2D5ABC-7A41-45F8-82C0-42F2A6412750}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C2D5ABC-7A41-45F8-82C0-42F2A6412750}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C2D5ABC-7A41-45F8-82C0-42F2A6412750}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C2D5ABC-7A41-45F8-82C0-42F2A6412750}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C55220F-4E2D-4119-8A36-AEA558E10DDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C55220F-4E2D-4119-8A36-AEA558E10DDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C55220F-4E2D-4119-8A36-AEA558E10DDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C55220F-4E2D-4119-8A36-AEA558E10DDA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C81522EF-DCC8-4576-9808-C9152C327249}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C81522EF-DCC8-4576-9808-C9152C327249}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C81522EF-DCC8-4576-9808-C9152C327249}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C81522EF-DCC8-4576-9808-C9152C327249}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
