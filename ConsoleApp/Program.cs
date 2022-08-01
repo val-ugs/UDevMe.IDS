@@ -97,6 +97,9 @@ namespace ConsoleApp
             }
         }
 
+        /// <summary>
+        /// <para> Detect intrusions in real-time </para>
+        /// </summary>
         private static void DetectIntrusionsInRealtime()
         {
             // Prepare
@@ -175,6 +178,9 @@ namespace ConsoleApp
             } while (Console.ReadKey(true).Key != ConsoleKey.Enter);
         }
 
+        /// <summary>
+        /// <para> Check the accuracy of algorithms based on training and test data </para>
+        /// </summary>
         private static void VerificateAlgorithmsFromCsv()
         {
             Stopwatch stopWatch = new Stopwatch();
@@ -301,6 +307,12 @@ namespace ConsoleApp
             }
         }
 
+        /// <summary>
+        /// <para> Getting the name of the training or test file </para>
+        /// </summary>
+        /// <param name="ListOfFilenames"> list of filenames </param>
+        /// <param name="isTrain"> is file has training data </param>
+        /// <returns> name of the selected file </returns>
         private static string GetFilename(string[] ListOfFilenames, bool isTrain)
         {
             int fileNumber;
@@ -320,6 +332,11 @@ namespace ConsoleApp
             return ListOfFilenames[fileNumber - 1];
         }
 
+        /// <summary>
+        /// <para> Getting data from a csv file </para>
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns> data from file </returns>
         private static List<string[]> GetDataFromCsvFile(string filename)
         {
             bool isHeaderRow;
@@ -341,6 +358,11 @@ namespace ConsoleApp
             return _csvDataService.GetData(filename, isHeaderRow);
         }
 
+        /// <summary>
+        /// <para> Getting a traffic data converter based on the data source type </para>
+        /// </summary>
+        /// <param name="dataSource"> data source type </param>
+        /// <returns> traffic data converter </returns>
         private static TrafficDataConverterService GetTrafficDataConverterService(DataSource dataSource)
         {
             ClassificationType classificationType;
@@ -378,6 +400,11 @@ namespace ConsoleApp
             return new TrafficDataConverterService(dataSource, classificationType, hasOneHotEncode);
         }
 
+        /// <summary>
+        /// <para> Get data source type based on filename </para>
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <returns> data source type </returns>
         private static DataSource DefineDataSource(string filename)
         {
             if (filename.ToUpper().StartsWith(DataSource.RealTime.ToString().ToUpper()))
@@ -389,6 +416,10 @@ namespace ConsoleApp
             throw new Exception("Not find data source");
         }
 
+        /// <summary>
+        /// <para> Select a classifier </para>
+        /// </summary>
+        /// <returns> classifier class </returns>
         private static IClassifierService GetClassifier()
         {
             int classifierNumber;
@@ -423,6 +454,10 @@ namespace ConsoleApp
             return null;
         }
 
+        /// <summary>
+        /// <para> Getting a KNN classifier with parameters (by default or changed)  </para>
+        /// </summary>
+        /// <returns> classifier class </returns>
         private static IClassifierService KnnClassifier()
         {
             int numberOfNeighbors = 5;
@@ -432,6 +467,10 @@ namespace ConsoleApp
             return new KnnService(numberOfNeighbors);
         }
 
+        /// <summary>
+        /// <para> Getting a MLP classifier with parameters (by default or changed)  </para>
+        /// </summary>
+        /// <returns> classifier class </returns>
         private static IClassifierService MlpClassifier()
         {
             int numberOfLayers = 1;
@@ -500,6 +539,11 @@ namespace ConsoleApp
             Console.WriteLine("Initialization multilayer perceptron...");
             return new MlpService(hiddenLayersWithNeurons, alpha, batchSize, learningRate, maxIterations, tol, beta_1, beta_2, epsilon);
         }
+
+        /// <summary>
+        /// <para> Getting a Random Forest classifier with parameters (by default or changed)  </para>
+        /// </summary>
+        /// <returns> classifier class </returns>
         private static IClassifierService RandomForestClassifier()
         {
             int numberOfTrees = 5;
@@ -517,6 +561,11 @@ namespace ConsoleApp
             Console.WriteLine("Initialization random forest...");
             return new RandomForestService(numberOfTrees, maxDepth, minSize, partOfTrafficDataRatio);
         }
+
+        /// <summary>
+        /// <para> Getting a XGBoost classifier with parameters (by default or changed)  </para>
+        /// </summary>
+        /// <returns> classifier class </returns>
         private static IClassifierService XGBoostClassifier()
         {
             int rounds = 5;
@@ -544,6 +593,13 @@ namespace ConsoleApp
             return new XGBoostService(rounds, maxDepth, minSize, learningRate, lambda, gamma, nFeatureRatio);
         }
 
+        /// <summary>
+        /// <para> Calculate accuracy based on labels </para>
+        /// </summary>
+        /// <param name="metric"> type of metric </param>
+        /// <param name="trueLabels"> correct labels </param>
+        /// <param name="predictedLabels"> predicted labels </param>
+        /// <returns> accuracy </returns>
         private static double CalculateAccuracyByMetric(Metric metric, List<int> trueLabels, List<int> predictedLabels)
         {
             switch (metric)
@@ -559,6 +615,9 @@ namespace ConsoleApp
             return 0;
         }
 
+        /// <summary>
+        /// <para> Create a file based on incoming real traffic </para>
+        /// </summary>
         private static void CreateCaptureFileFromRealTimeTraffic()
         {
             Console.Write("-- Please enter the output file name: ");
@@ -571,6 +630,9 @@ namespace ConsoleApp
             CreateCaptureFileFromRealtimeTraffic(filename, selectedDevice, 0);
         }
 
+        /// <summary>
+        /// <para> Select available devices on this machine </para>
+        /// </summary>
         private static LibPcapLiveDevice SelectDevice()
         {
             // Retrieve the device list
@@ -613,6 +675,9 @@ namespace ConsoleApp
             return devices[deviceNumber];
         }
 
+        /// <summary>
+        /// <para> Create pcap file based on incoming real traffic </para>
+        /// </summary>
         private static void CreateCaptureFileFromRealtimeTraffic(string filename, LibPcapLiveDevice selectedDevice, int captureTime)
         {
             _packetIndex_option = 0;
@@ -683,6 +748,9 @@ namespace ConsoleApp
             }
         }
 
+        /// <summary>
+        /// <para> Creating a csv file based on pcap files </para>
+        /// </summary>
         private static void CreateCsvFromPcapFiles()
         {
             string[] pcapFilenames = _pcapDataService.GetFilenameList();
@@ -914,6 +982,9 @@ namespace ConsoleApp
             return value;
         }
 
+        /// <summary>
+        /// Create program header
+        /// </summary>
         private static void DisplayHeader()
         {
             var logo = new[]
