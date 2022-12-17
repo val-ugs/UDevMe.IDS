@@ -28,6 +28,9 @@ namespace IDS.DataAccess.CSV
             string fullPath = Path.Combine(_path, fileName);
             List<string[]> outputData = new List<string[]>();
 
+            if (File.Exists(fullPath) == false)
+                return null;
+
             using (var reader = new StreamReader(fullPath))
             {
                 if (hasHeaderRow)

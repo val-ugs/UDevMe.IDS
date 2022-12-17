@@ -12,10 +12,68 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 
 namespace ConsoleApp
 {
+    public class Config
+    {
+        public int CaptureTime { get; set; }
+        public string TrainFilename { get; set; }
+        public bool HasHeaderRow { get; set; }
+        public int TrainNumberOfSamples { get; set; }
+        public ClassificationType ClassificationType { get; set; }
+        public bool UseOneHotEncode { get; set; }
+        public int ClassifierNumber { get; set; }
+        public ClassifierData ClassifierData { get; set; }
+        public int DeviceNumber { get; set; }
+    }
+
+    public class ClassifierData
+    {
+        public KnnData KnnData { get; set; }
+        public MlpData MlpData { get; set; }
+        public RandomForestData RandomForestData { get; set; }
+        public XGBoostData XGBoostData { get; set; }
+    }
+
+    public class KnnData
+    {
+        public int NumberOfNeighbors { get; set; }
+    }
+
+    public class MlpData
+    {
+        public List<int> HiddenLayersWithNeurons { get; set; }
+        public double Alpha { get; set; }
+        public int BatchSize { get; set; }
+        public double LearningRate { get; set; }
+        public int MaxIterations { get; set; }
+        public double Tol { get; set; }
+        public double Beta_1 { get; set; }
+        public double Beta_2 { get; set; }
+        public double Epsilon { get; set; }
+    }
+
+    public class RandomForestData
+    {
+        public int NumberOfTrees { get; set; }
+        public int MaxDepth { get; set; }
+        public int MinSize { get; set; }
+        public double PartOfTrafficDataRatio { get; set; }
+    }
+
+    public class XGBoostData
+    {
+        public int Rounds { get; set; }
+        public int MaxDepth { get; set; }
+        public int MinSize { get; set; }
+        public double LearningRate { get; set; }
+        public double Lambda { get; set; }
+        public int Gamma { get; set; }
+        public double NFeatureRatio { get; set; }
+    }
 
     public class Program
     {
@@ -36,6 +94,7 @@ namespace ConsoleApp
         private static readonly string _baseDirectory = System.AppDomain.CurrentDomain.BaseDirectory;
         private static readonly string _csvPath = Path.Combine(_baseDirectory, "CsvData");
         private static readonly string _pcapPath = Path.Combine(_baseDirectory, "PcapData");
+        private static readonly string _configPath = Path.Combine(_baseDirectory, "Configs");
         private static readonly string _logFilePath = Path.Combine(_baseDirectory, "Logs");
         private static readonly char _delimiter = ',';
         private static DataService _csvDataService;
@@ -64,10 +123,12 @@ namespace ConsoleApp
             {
                 Console.WriteLine("Select option:");
                 Console.WriteLine("----------------------------------------------------");
-                Console.WriteLine("1. Detect intrusions in real time");
-                Console.WriteLine("2. Verificate algorithms from csv files");
-                Console.WriteLine("3. Create capture file from real-time traffic");
-                Console.WriteLine("4. Create csv database from multiple pcap files");
+                Console.WriteLine("1. Detect intrusions in real time (use config file)");
+                Console.WriteLine("2. Detect intrusions in real time (console input)");
+                Console.WriteLine("3. Create config file");
+                Console.WriteLine("4. Verificate algorithms from csv files");
+                Console.WriteLine("5. Create capture file from real-time traffic");
+                Console.WriteLine("6. Create csv database from multiple pcap files");
 
                 Console.WriteLine();
                 Console.Write("-- Please choose option: ");
@@ -76,18 +137,26 @@ namespace ConsoleApp
                 switch (option)
                 {
                     case 1:
-                        DetectIntrusionsInRealtime();
+                        DetectIntrusionsInRealtimeWithConfigFile();
                         isCorrectOption = true;
                         break;
                     case 2:
-                        VerificateAlgorithmsFromCsv();
+                        DetectIntrusionsInRealtimeWithConsoleInput();
                         isCorrectOption = true;
                         break;
                     case 3:
-                        CreateCaptureFileFromRealTimeTraffic();
+                        CreateConfigFile();
                         isCorrectOption = true;
                         break;
                     case 4:
+                        VerificateAlgorithmsFromCsv();
+                        isCorrectOption = true;
+                        break;
+                    case 5:
+                        CreateCaptureFileFromRealTimeTraffic();
+                        isCorrectOption = true;
+                        break;
+                    case 6:
                         CreateCsvFromPcapFiles();
                         isCorrectOption = true;
                         break;
@@ -98,12 +167,146 @@ namespace ConsoleApp
         }
 
         /// <summary>
-        /// <para> Detect intrusions in real-time </para>
+        /// <para> Detect intrusions in real-time with config file </para>
         /// </summary>
-        private static void DetectIntrusionsInRealtime()
+        private static void DetectIntrusionsInRealtimeWithConfigFile()
+        {
+            string[] ListOfFilenames = Directory.GetFiles(_configPath).Select(file => Path.GetFileName(file)).ToArray();
+            if (ListOfFilenames.Length == 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Config files not found");
+                return;
+            }
+
+            string filename = GetConfigFilename(ListOfFilenames);
+            string fullpath = Path.Combine(_configPath, filename);
+            Config config;
+            using (StreamReader r = new StreamReader(fullpath))
+            {
+                string json = r.ReadToEnd();
+                config = JsonSerializer.Deserialize<Config>(json);
+            }
+
+            Console.WriteLine("Initialization...");
+
+            List<string[]> trainData =  GetDataFromCsvFile(config.TrainFilename, config.HasHeaderRow);
+
+            if (trainData == null)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Training file not found");
+                return;
+            }
+
+            if (config.TrainNumberOfSamples < 0 || config.TrainNumberOfSamples > trainData.Count())
+            {
+                Console.WriteLine();
+                Console.WriteLine("Wrong number of training file samples");
+                return;
+            }
+
+            TrafficDataConverterService trafficDataConverterService = GetTrafficDataConverterService(DefineDataSource(config.TrainFilename), config.ClassificationType, config.UseOneHotEncode);
+
+            TrafficData trainTrafficData = trafficDataConverterService.ConvertTrainData(trainData);
+
+            trainTrafficData.Samples = trainTrafficData.Samples.Take(config.TrainNumberOfSamples).ToList();
+
+            NormalizeFeaturesService normalizeFeaturesService = new NormalizeFeaturesService(0, 1);
+            trainTrafficData.Samples = normalizeFeaturesService.NormalizeTrainSamples(trainTrafficData.Samples);
+
+            IClassifierService classifierService = GetClassifier(config.ClassifierNumber, config.ClassifierData);
+            classifierService.Train(trainTrafficData);
+
+            // Retrieve the device list
+            var devices = LibPcapLiveDeviceList.Instance;
+            if (devices.Count < 1 || devices.Count < config.DeviceNumber)
+            {
+                Console.WriteLine("No devices were found on this machine");
+                return;
+            }
+            LibPcapLiveDevice selectedDevice = devices[config.DeviceNumber];
+
+            string ext = (_reservedPcapFilename.EndsWith(".pcap") || _reservedPcapFilename.EndsWith(".pcapng")) ? "" : ".pcap";
+            string pcapFilename = DataSource.RealTime.ToString().ToUpper() + "_" + _reservedPcapFilename + ext;
+
+            string logFilename = "log.log";
+            StringBuilder log = new StringBuilder();
+
+            //RUN
+            Console.WriteLine("Press Enter to stop...");
+            do
+            {
+                while (!Console.KeyAvailable)
+                {
+                    CreateCaptureFileFromRealtimeTraffic(pcapFilename, selectedDevice, config.CaptureTime);
+
+                    List<string[]> testData = _pcapDataService.GetData(pcapFilename);
+
+                    if (testData.Count > 0)
+                    {
+                        TrafficData testTrafficData = trafficDataConverterService.ConvertTestData(testData, hasLabel: false);
+
+                        testTrafficData.Samples = normalizeFeaturesService.NormalizeTestSamples(testTrafficData.Samples);
+
+                        List<int> labels = classifierService.Predict(testTrafficData);
+                        List<string> labelNames = labels.Select(l => trafficDataConverterService.GetNameByLabel(l)).ToList();
+
+                        var statistics = labelNames.GroupBy(l => l)
+                                    .Select(x => new
+                                    {
+                                        LabelName = x.Key,
+                                        Count = x.Count()
+                                    });
+
+                        log.Append(DateTime.Now.ToString("MMM dd HH:mm:ss ", System.Globalization.CultureInfo.CreateSpecificCulture("en-US")));
+                        log.Append("hostname IDS:");
+                        foreach (var statistic in statistics)
+                        {
+                            log.Append(String.Format(" Label Name: {0} - Count: {1};", statistic.LabelName, statistic.Count));
+                        }
+                        log.Append(Environment.NewLine);
+                        File.AppendAllText(Path.Combine(_logFilePath, logFilename), log.ToString());
+                        log.Clear();
+                    }
+                }
+            } while (Console.ReadKey(true).Key != ConsoleKey.Enter);
+        }
+
+        /// <summary>
+        /// <para> Get config filename </para>
+        /// </summary>
+        /// <param name="ListOfFilenames"> list of filenames </param>
+        /// <returns> config filename </returns>
+        private static string GetConfigFilename(string[] ListOfFilenames)
+        {
+            int fileNumber;
+            while (true)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Select Config file:");
+                for (int i = 1; i <= ListOfFilenames.Length; i++)
+                    Console.WriteLine(i + ": " + ListOfFilenames[i - 1]);
+                Console.WriteLine();
+                Console.Write("-- Please choose file (number): ");
+                if (Int32.TryParse(Console.ReadLine(), out fileNumber))
+                    if (fileNumber > 0 && fileNumber <= ListOfFilenames.Length)
+                        break;
+            }
+
+            return ListOfFilenames[fileNumber - 1];
+        }
+
+        /// <summary>
+        /// <para> Detect intrusions in real-time with console input</para>
+        /// </summary>
+        private static void DetectIntrusionsInRealtimeWithConsoleInput()
         {
             // Prepare
+            Console.WriteLine();
             int captureTime = 30000; // In milliseconds (1 minute = 60000 milliseconds)
+            captureTime = TryReadValueFromConsole("Enter capture time (in milliseconds, 1 minute = 60000 milliseconds)", captureTime);
+
             string[] ListOfCsvFilenames = _csvDataService.GetFilenameList();
             ListOfCsvFilenames = ListOfCsvFilenames.Where(f => f.StartsWith(DataSource.RealTime.ToString().ToUpper())).ToArray();
 
@@ -116,12 +319,13 @@ namespace ConsoleApp
             string trainFilename = GetFilename(ListOfCsvFilenames, isTrain: true);
             List<string[]> trainData = GetDataFromCsvFile(trainFilename);
 
+            int trainNumberOfSamples = TryReadValueFromConsole("\nEnter train number of samples",
+                                                           min: 1, max: trainData.Count());
+
             TrafficDataConverterService trafficDataConverterService = GetTrafficDataConverterService(DefineDataSource(trainFilename));
 
             TrafficData trainTrafficData = trafficDataConverterService.ConvertTrainData(trainData);
 
-            int trainNumberOfSamples = TryReadValueFromConsole("\nEnter train number of samples",
-                                                           min: 1, max: trainTrafficData.Samples.Count);
             trainTrafficData.Samples = trainTrafficData.Samples.Take(trainNumberOfSamples).ToList();
 
             NormalizeFeaturesService normalizeFeaturesService = new NormalizeFeaturesService(0, 1);
@@ -176,6 +380,85 @@ namespace ConsoleApp
                     }
                 }
             } while (Console.ReadKey(true).Key != ConsoleKey.Enter);
+        }
+
+        /// <summary>
+        /// <para> Create config file </para>
+        /// </summary>
+        private static void CreateConfigFile()
+        {
+            Config config = new Config();
+
+            Console.WriteLine();
+            config.CaptureTime = 30000; // In milliseconds (1 minute = 60000 milliseconds)
+            config.CaptureTime = TryReadValueFromConsole("Enter capture time (in milliseconds, 1 minute = 60000 milliseconds)", config.CaptureTime);
+
+            string[] ListOfCsvFilenames = _csvDataService.GetFilenameList();
+            ListOfCsvFilenames = ListOfCsvFilenames.Where(f => f.StartsWith(DataSource.RealTime.ToString().ToUpper())).ToArray();
+
+            if (ListOfCsvFilenames.Length == 0)
+            {
+                Console.WriteLine("Csv files are not found");
+                return;
+            }
+            config.TrainFilename = GetFilename(ListOfCsvFilenames, isTrain: true);
+
+            config.HasHeaderRow = GetHasHeaderRowFromConsole();
+
+            List<string[]> trainData = _csvDataService.GetData(config.TrainFilename, config.HasHeaderRow); ;
+            config.TrainNumberOfSamples = TryReadValueFromConsole("\nEnter train number of samples",
+                                                           min: 1, max: trainData.Count());
+
+            config.ClassificationType = GetClassificationTypeFromConsole();
+
+            config.UseOneHotEncode = GetUseOneHotEncodeFromConsole();
+
+            config.ClassifierNumber = GetClassifierNumberFromConsole();
+
+            ClassifierType classifierType = (ClassifierType)Enum.ToObject(typeof(ClassifierType), config.ClassifierNumber - 1);
+            config.ClassifierData = new ClassifierData();
+
+            switch (classifierType)
+            {
+                case ClassifierType.Knn:
+                    config.ClassifierData.KnnData = GetKnnDataFromConsole();
+                    break;
+                case ClassifierType.Mlp:
+                    config.ClassifierData.MlpData = GetMlpDataFromConsole();
+                    break;
+                case ClassifierType.RandomForest:
+                    config.ClassifierData.RandomForestData = GetRandomForestData();
+                    break;
+                case ClassifierType.XGBoost:
+                    config.ClassifierData.XGBoostData = GetXGBoostDataFromConsole();
+                    break;
+            }
+
+            // Retrieve the device list
+            var devices = LibPcapLiveDeviceList.Instance;
+            // If no devices were found print an error
+            if (devices.Count < 1)
+            {
+                Console.WriteLine("No devices were found on this machine");
+                return;
+            }
+            Console.WriteLine();
+            Console.WriteLine("The following devices are available on this machine:");
+            Console.WriteLine("----------------------------------------------------");
+            Console.WriteLine();
+            config.DeviceNumber = GetDeviceNumberFromConsole(devices);
+
+            Console.WriteLine();
+            Console.WriteLine("Enter file name for new config file?");
+            string newFilename = Console.ReadLine();
+            string ext = newFilename.EndsWith(".json") ? "" : ".json";
+            string fullPath = Path.Combine(_configPath, newFilename + ext);
+
+            string json = JsonSerializer.Serialize(config);
+            File.WriteAllText(fullPath, json);
+
+            Console.WriteLine();
+            Console.WriteLine("Config file created");
         }
 
         /// <summary>
@@ -339,7 +622,29 @@ namespace ConsoleApp
         /// <returns> data from file </returns>
         private static List<string[]> GetDataFromCsvFile(string filename)
         {
-            bool isHeaderRow;
+            bool hasHeaderRow = GetHasHeaderRowFromConsole();
+
+            return GetDataFromCsvFile(filename, hasHeaderRow);
+        }
+
+        /// <summary>
+        /// <para> Getting data from a csv file </para>
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <param name="hasHeaderRow"></param>
+        /// <returns> data from file </returns>
+        private static List<string[]> GetDataFromCsvFile(string filename, bool hasHeaderRow)
+        {
+            return _csvDataService.GetData(filename, hasHeaderRow);
+        }
+
+        /// <summary>
+        /// <para> Getting hasHeaderRow </para>
+        /// </summary>
+        /// <returns> hasHeaderRow </returns>
+        private static bool GetHasHeaderRowFromConsole()
+        {
+            bool hasHeaderRow;
             while (true)
             {
                 Console.WriteLine();
@@ -348,14 +653,13 @@ namespace ConsoleApp
                 if (text.ToUpper() == "yes".ToUpper() || text.ToUpper() == "no".ToUpper())
                 {
                     if (text.ToUpper() == "yes".ToUpper())
-                        isHeaderRow = true;
+                        hasHeaderRow = true;
                     else
-                        isHeaderRow = false;
+                        hasHeaderRow = false;
                     break;
                 }
             }
-
-            return _csvDataService.GetData(filename, isHeaderRow);
+            return hasHeaderRow;
         }
 
         /// <summary>
@@ -364,6 +668,31 @@ namespace ConsoleApp
         /// <param name="dataSource"> data source type </param>
         /// <returns> traffic data converter </returns>
         private static TrafficDataConverterService GetTrafficDataConverterService(DataSource dataSource)
+        {
+            ClassificationType classificationType = GetClassificationTypeFromConsole();
+
+            bool useOneHotEncode = GetUseOneHotEncodeFromConsole();
+
+            return GetTrafficDataConverterService(dataSource, classificationType, useOneHotEncode);
+        }
+
+        /// <summary>
+        /// <para> Getting a traffic data converter based on the data source type </para>
+        /// </summary>
+        /// <param name="dataSource"> data source type </param>
+        /// /// <param name="classificationType"> classification type</param>
+        /// /// <param name="useOneHotEncode"> use one hot encode </param>
+        /// <returns> traffic data converter </returns>
+        private static TrafficDataConverterService GetTrafficDataConverterService(DataSource dataSource, ClassificationType classificationType, bool useOneHotEncode)
+        {
+            return new TrafficDataConverterService(dataSource, classificationType, useOneHotEncode);
+        }
+
+        /// <summary>
+        /// <para> Getting a classification type </para>
+        /// </summary>
+        /// <returns> classification type </returns>
+        private static ClassificationType GetClassificationTypeFromConsole()
         {
             ClassificationType classificationType;
             while (true)
@@ -381,7 +710,16 @@ namespace ConsoleApp
                 }
             }
 
-            bool hasOneHotEncode;
+            return classificationType;
+        }
+
+        /// <summary>
+        /// <para> Getting useOneHotEncode </para>
+        /// </summary>
+        /// <returns> useOneHotEncode </returns>
+        private static bool GetUseOneHotEncodeFromConsole()
+        {
+            bool useOneHotEncode;
             while (true)
             {
                 Console.WriteLine();
@@ -390,14 +728,13 @@ namespace ConsoleApp
                 if (text.ToUpper() == "OneHotEncode".ToUpper() || text.ToUpper() == "Skip".ToUpper())
                 {
                     if (text.ToUpper() == "OneHotEncode".ToUpper())
-                        hasOneHotEncode = true;
+                        useOneHotEncode = true;
                     else
-                        hasOneHotEncode = false;
+                        useOneHotEncode = false;
                     break;
                 }
             }
-
-            return new TrafficDataConverterService(dataSource, classificationType, hasOneHotEncode);
+            return useOneHotEncode;
         }
 
         /// <summary>
@@ -422,20 +759,7 @@ namespace ConsoleApp
         /// <returns> classifier class </returns>
         private static IClassifierService GetClassifier()
         {
-            int classifierNumber;
-            while (true)
-            {
-                Console.WriteLine();
-                Console.WriteLine("Select classifier:");
-                int i = 1;
-                foreach (ClassifierType classifierName in Enum.GetValues(typeof(ClassifierType)))
-                    Console.WriteLine(i++ + ": " + classifierName);
-                Console.WriteLine();
-                Console.Write("-- Please choose classifier (number): ");
-                if (Int32.TryParse(Console.ReadLine(), out classifierNumber))
-                    if (classifierNumber > 0 && classifierNumber <= i)
-                        break;
-            }
+            int classifierNumber = GetClassifierNumberFromConsole();
 
             ClassifierType classifierType = (ClassifierType)Enum.ToObject(typeof(ClassifierType), classifierNumber - 1);
 
@@ -455,16 +779,81 @@ namespace ConsoleApp
         }
 
         /// <summary>
+        /// <para> Select a classifier </para>
+        /// </summary>
+        /// /// <param name="classifierNumber"> classifier number </param>
+        /// /// <param name="classifierData"> classifier data </param>
+        /// <returns> classifier class </returns>
+        private static IClassifierService GetClassifier(int classifierNumber, ClassifierData classifierData)
+        {
+            ClassifierType classifierType = (ClassifierType)Enum.ToObject(typeof(ClassifierType), classifierNumber - 1);
+
+            switch (classifierType)
+            {
+                case ClassifierType.Knn:
+                    return new KnnService(classifierData.KnnData.NumberOfNeighbors);
+                case ClassifierType.Mlp:
+                    return new MlpService(classifierData.MlpData.HiddenLayersWithNeurons, classifierData.MlpData.Alpha, classifierData.MlpData.BatchSize, classifierData.MlpData.LearningRate,
+                                          classifierData.MlpData.MaxIterations, classifierData.MlpData.Tol, classifierData.MlpData.Beta_1, classifierData.MlpData.Beta_2, classifierData.MlpData.Epsilon); ;
+                case ClassifierType.RandomForest:
+                    return new RandomForestService(classifierData.RandomForestData.NumberOfTrees, classifierData.RandomForestData.MaxDepth, 
+                                                   classifierData.RandomForestData.MinSize, classifierData.RandomForestData.PartOfTrafficDataRatio);
+                case ClassifierType.XGBoost:
+                    return new XGBoostService(classifierData.XGBoostData.Rounds, classifierData.XGBoostData.MaxDepth, classifierData.XGBoostData.MinSize, classifierData.XGBoostData.LearningRate,
+                                              classifierData.XGBoostData.Lambda, classifierData.XGBoostData.Gamma, classifierData.XGBoostData.NFeatureRatio); ;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// <para> Getting classifier number </para>
+        /// </summary>
+        /// <returns> classifier number</returns>
+        private static int GetClassifierNumberFromConsole()
+        {
+            int classifierNumber;
+            while (true)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Select classifier:");
+                int i = 1;
+                foreach (ClassifierType classifierName in Enum.GetValues(typeof(ClassifierType)))
+                    Console.WriteLine(i++ + ": " + classifierName);
+                Console.WriteLine();
+                Console.Write("-- Please choose classifier (number): ");
+                if (Int32.TryParse(Console.ReadLine(), out classifierNumber))
+                    if (classifierNumber > 0 && classifierNumber <= i)
+                        break;
+            }
+
+            return classifierNumber;
+        }
+
+        /// <summary>
         /// <para> Getting a KNN classifier with parameters (by default or changed)  </para>
         /// </summary>
         /// <returns> classifier class </returns>
         private static IClassifierService KnnClassifier()
         {
-            int numberOfNeighbors = 5;
-            numberOfNeighbors = TryReadValueFromConsole("Enter number of neighbors", numberOfNeighbors);
+            KnnData knnData = GetKnnDataFromConsole();
 
             Console.WriteLine("Initialization Knn...");
-            return new KnnService(numberOfNeighbors);
+            return new KnnService(knnData.NumberOfNeighbors);
+        }
+
+        /// <summary>
+        /// <para> Getting a KNN Data  </para>
+        /// </summary>
+        /// <returns> KNN Data </returns>
+        private static KnnData GetKnnDataFromConsole()
+        {
+            KnnData knnData = new KnnData();
+
+            knnData.NumberOfNeighbors = 5;
+            knnData.NumberOfNeighbors = TryReadValueFromConsole("Enter number of neighbors", knnData.NumberOfNeighbors);
+
+            return knnData;
         }
 
         /// <summary>
@@ -473,6 +862,20 @@ namespace ConsoleApp
         /// <returns> classifier class </returns>
         private static IClassifierService MlpClassifier()
         {
+            MlpData mlpData = GetMlpDataFromConsole();
+
+            Console.WriteLine("Initialization multilayer perceptron...");
+            return new MlpService(mlpData.HiddenLayersWithNeurons, mlpData.Alpha, mlpData.BatchSize, mlpData.LearningRate, 
+                                  mlpData.MaxIterations, mlpData.Tol, mlpData.Beta_1, mlpData.Beta_2, mlpData.Epsilon);
+        }
+
+        /// <summary>
+        /// <para> Getting a MLP Data </para>
+        /// </summary>
+        /// <returns> MLP Data </returns>
+        private static MlpData GetMlpDataFromConsole()
+        {
+            MlpData mlpData = new MlpData();
             int numberOfLayers = 1;
             bool defaulthiddenLayers = false;
             while (true)
@@ -491,53 +894,51 @@ namespace ConsoleApp
                         break;
                     }
             }
-            List<int> hiddenLayersWithNeurons;
             if (defaulthiddenLayers == false)
             {
-                hiddenLayersWithNeurons = new List<int>(numberOfLayers);
+                mlpData.HiddenLayersWithNeurons = new List<int>(numberOfLayers);
                 int i = 1;
-                while (hiddenLayersWithNeurons.Count != numberOfLayers)
+                while (mlpData.HiddenLayersWithNeurons.Count != numberOfLayers)
                 {
                     Console.WriteLine("Enter number of Neurons in the {0} hidden layer:", i);
                     if (Int32.TryParse(Console.ReadLine(), out int numberOfNeurons))
                         if (numberOfNeurons > 0)
                         {
-                            hiddenLayersWithNeurons.Add(numberOfNeurons);
+                            mlpData.HiddenLayersWithNeurons.Add(numberOfNeurons);
                             i++;
                         }
                 }
             }
             else
             {
-                hiddenLayersWithNeurons = new List<int> { 100 };
+                mlpData.HiddenLayersWithNeurons = new List<int> { 100 };
             }
 
-            double alpha = 0.0001;
-            alpha = TryReadValueFromConsole("Enter alpha", alpha);
+            mlpData.Alpha = 0.0001;
+            mlpData.Alpha = TryReadValueFromConsole("Enter alpha", mlpData.Alpha);
 
-            int batchSize = 200;
-            batchSize = TryReadValueFromConsole("Enter batch size", batchSize);
+            mlpData.BatchSize = 200;
+            mlpData.BatchSize = TryReadValueFromConsole("Enter batch size", mlpData.BatchSize);
 
-            double learningRate = 0.001;
-            learningRate = TryReadValueFromConsole("Enter learning rate", learningRate);
+            mlpData.LearningRate = 0.001;
+            mlpData.LearningRate = TryReadValueFromConsole("Enter learning rate", mlpData.LearningRate);
 
-            int maxIterations = 200;
-            maxIterations = TryReadValueFromConsole("Enter max iterations", maxIterations);
+            mlpData.MaxIterations = 200;
+            mlpData.MaxIterations = TryReadValueFromConsole("Enter max iterations", mlpData.MaxIterations);
 
-            double tol = 0.0001;
-            tol = TryReadValueFromConsole("Enter tol", tol);
+            mlpData.Tol = 0.0001;
+            mlpData.Tol = TryReadValueFromConsole("Enter tol", mlpData.Tol);
 
-            double beta_1 = 0.9;
-            beta_1 = TryReadValueFromConsole("Enter beta_1", beta_1);
+            mlpData.Beta_1 = 0.9;
+            mlpData.Beta_1 = TryReadValueFromConsole("Enter beta_1", mlpData.Beta_1);
 
-            double beta_2 = 0.999;
-            beta_2 = TryReadValueFromConsole("Enter beta_2", beta_2);
+            mlpData.Beta_2 = 0.999;
+            mlpData.Beta_2 = TryReadValueFromConsole("Enter beta_2", mlpData.Beta_2);
 
-            double epsilon = 0.00000001;
-            epsilon = TryReadValueFromConsole("Enter epsilon", epsilon);
+            mlpData.Epsilon = 0.00000001;
+            mlpData.Epsilon = TryReadValueFromConsole("Enter epsilon", mlpData.Epsilon);
 
-            Console.WriteLine("Initialization multilayer perceptron...");
-            return new MlpService(hiddenLayersWithNeurons, alpha, batchSize, learningRate, maxIterations, tol, beta_1, beta_2, epsilon);
+            return mlpData;
         }
 
         /// <summary>
@@ -546,20 +947,33 @@ namespace ConsoleApp
         /// <returns> classifier class </returns>
         private static IClassifierService RandomForestClassifier()
         {
-            int numberOfTrees = 5;
-            numberOfTrees = TryReadValueFromConsole("Enter num Trees", numberOfTrees);
-
-            int maxDepth = 3;
-            maxDepth = TryReadValueFromConsole("Enter max depth", maxDepth);
-
-            int minSize = 1;
-            minSize = TryReadValueFromConsole("Enter min size", minSize);
-
-            double partOfTrafficDataRatio = 0.2;
-            partOfTrafficDataRatio = TryReadValueFromConsole("Enter part of traffic data ratio", partOfTrafficDataRatio);
+            RandomForestData randomForestData = GetRandomForestData();
 
             Console.WriteLine("Initialization random forest...");
-            return new RandomForestService(numberOfTrees, maxDepth, minSize, partOfTrafficDataRatio);
+            return new RandomForestService(randomForestData.NumberOfTrees, randomForestData.MaxDepth, randomForestData.MinSize, randomForestData.PartOfTrafficDataRatio);
+        }
+
+        /// <summary>
+        /// <para> Getting a Random Forest Data </para>
+        /// </summary>
+        /// <returns> Random Forest Data </returns>
+        private static RandomForestData GetRandomForestData()
+        {
+            RandomForestData randomForestData = new RandomForestData();
+
+            randomForestData.NumberOfTrees = 5;
+            randomForestData.NumberOfTrees = TryReadValueFromConsole("Enter num Trees", randomForestData.NumberOfTrees);
+
+            randomForestData.MaxDepth = 3;
+            randomForestData.MaxDepth = TryReadValueFromConsole("Enter max depth", randomForestData.MaxDepth);
+
+            randomForestData.MinSize = 1;
+            randomForestData.MinSize = TryReadValueFromConsole("Enter min size", randomForestData.MinSize);
+
+            randomForestData.PartOfTrafficDataRatio = 0.2;
+            randomForestData.PartOfTrafficDataRatio = TryReadValueFromConsole("Enter part of traffic data ratio", randomForestData.PartOfTrafficDataRatio);
+
+            return randomForestData;
         }
 
         /// <summary>
@@ -568,29 +982,43 @@ namespace ConsoleApp
         /// <returns> classifier class </returns>
         private static IClassifierService XGBoostClassifier()
         {
-            int rounds = 5;
-            rounds = TryReadValueFromConsole("Enter rounds", rounds);
-
-            int maxDepth = 5;
-            maxDepth = TryReadValueFromConsole("Enter max depth", maxDepth);
-
-            int minSize = 1;
-            minSize = TryReadValueFromConsole("Enter min size", minSize);
-
-            double learningRate = 0.4;
-            learningRate = TryReadValueFromConsole("Enter learning rate", learningRate);
-
-            double lambda = 1.5;
-            lambda = TryReadValueFromConsole("Enter lambda", lambda);
-
-            int gamma = 1;
-            gamma = TryReadValueFromConsole("Enter gamma", gamma);
-
-            double nFeatureRatio = 0.2;
-            nFeatureRatio = TryReadValueFromConsole("Enter n feature ratio", nFeatureRatio);
+            XGBoostData xgBoostData = GetXGBoostDataFromConsole();
 
             Console.WriteLine("Initialization XGBoost...");
-            return new XGBoostService(rounds, maxDepth, minSize, learningRate, lambda, gamma, nFeatureRatio);
+            return new XGBoostService(xgBoostData.Rounds, xgBoostData.MaxDepth, xgBoostData.MinSize, xgBoostData.LearningRate,
+                                      xgBoostData.Lambda, xgBoostData.Gamma, xgBoostData.NFeatureRatio);
+        }
+
+        /// <summary>
+        /// <para> Getting a XGBoost Data </para>
+        /// </summary>
+        /// <returns> XGBoost Data </returns>
+        private static XGBoostData GetXGBoostDataFromConsole()
+        {
+            XGBoostData xgBoostData = new XGBoostData();
+
+            xgBoostData.Rounds = 5;
+            xgBoostData.Rounds = TryReadValueFromConsole("Enter rounds", xgBoostData.Rounds);
+
+            xgBoostData.MaxDepth = 5;
+            xgBoostData.MaxDepth = TryReadValueFromConsole("Enter max depth", xgBoostData.MaxDepth);
+
+            xgBoostData.MinSize = 1;
+            xgBoostData.MinSize = TryReadValueFromConsole("Enter min size", xgBoostData.MinSize);
+
+            xgBoostData.LearningRate = 0.4;
+            xgBoostData.LearningRate = TryReadValueFromConsole("Enter learning rate", xgBoostData.LearningRate);
+
+            xgBoostData.Lambda = 1.5;
+            xgBoostData.Lambda = TryReadValueFromConsole("Enter lambda", xgBoostData.Lambda);
+
+            xgBoostData.Gamma = 1;
+            xgBoostData.Gamma = TryReadValueFromConsole("Enter gamma", xgBoostData.Gamma);
+
+            xgBoostData.NFeatureRatio = 0.2;
+            xgBoostData.NFeatureRatio = TryReadValueFromConsole("Enter n feature ratio", xgBoostData.NFeatureRatio);
+
+            return xgBoostData;
         }
 
         /// <summary>
@@ -650,6 +1078,17 @@ namespace ConsoleApp
             Console.WriteLine("----------------------------------------------------");
             Console.WriteLine();
 
+            int deviceNumber = GetDeviceNumberFromConsole(devices);
+
+            return devices[deviceNumber];
+        }
+
+        /// <summary>
+        /// <para> Getting a device number </para>
+        /// </summary>
+        /// <returns> device number </returns>
+        private static int GetDeviceNumberFromConsole(LibPcapLiveDeviceList devices)
+        {
             int deviceNumber;
             while (true)
             {
@@ -671,8 +1110,7 @@ namespace ConsoleApp
                     if (deviceNumber > 0 && deviceNumber <= i)
                         break;
             }
-
-            return devices[deviceNumber];
+            return deviceNumber;
         }
 
         /// <summary>
@@ -722,7 +1160,7 @@ namespace ConsoleApp
         }
 
         /// <summary>
-        /// // Write the packet to the file
+        /// <para> Write the packet to the file </para>
         /// </summary>
         private static void device_OnPacketArrival_Option(object sender, PacketCapture e)
         {
@@ -929,6 +1367,12 @@ namespace ConsoleApp
             }
         }
 
+        /// <summary>
+        /// <para> Getting int value </para>
+        /// </summary>
+        /// <param name="question"> question </param>
+        /// <param name="value"> default value </param>
+        /// <returns> int value </returns>
         private static int TryReadValueFromConsole(string question, int value)
         {
             while (true)
@@ -938,7 +1382,7 @@ namespace ConsoleApp
                 if (text == "")
                     break;
                 if (Int32.TryParse(text, out int parseValue))
-                    if (value > 0)
+                    if (parseValue > 0)
                     {
                         value = parseValue;
                         break;
@@ -948,6 +1392,12 @@ namespace ConsoleApp
             return value;
         }
 
+        /// <summary>
+        /// <para> Getting double value </para>
+        /// </summary>
+        /// <param name="question"> question </param>
+        /// <param name="value"> default value </param>
+        /// <returns> double value </returns>
         private static double TryReadValueFromConsole(string question, double value)
         {
             while (true)
@@ -957,7 +1407,7 @@ namespace ConsoleApp
                 if (text == "")
                     break;
                 if (Double.TryParse(text, out double parseValue))
-                    if (value > 0)
+                    if (parseValue > 0)
                     {
                         value = parseValue;
                         break;
@@ -967,6 +1417,13 @@ namespace ConsoleApp
             return value;
         }
 
+        /// <summary>
+        /// <para> Getting int value between min and max values </para>
+        /// </summary>
+        /// <param name="question"> question </param>
+        /// <param name="min"> min </param>
+        /// /// <param name="max"> max </param>
+        /// <returns> int value </returns>
         private static int TryReadValueFromConsole(string question, int min, int max)
         {
             int value;
