@@ -1,0 +1,24 @@
+﻿{
+  "CaptureTime": 30000,
+  "TrainFilename": "REALTIME_MyPcTrafficTrainData.csv",
+  "HasHeaderRow": false,
+  "TrainNumberOfSamples": 1084,
+  "ClassificationType": 0,
+  "UseOneHotEncode": true,
+  "ClassifierNumber": 4,
+  "ClassifierData": {
+    "KnnData": null,
+    "MlpData": null,
+    "RandomForestData": null,
+    "XGBoostData": {
+      "Rounds": 5,
+      "MaxDepth": 5,
+      "MinSize": 1,
+      "LearningRate": 0.4,
+      "Lambda": 1.5,
+      "Gamma": 1,
+      "NFeatureRatio": 0.2
+    }
+  },
+  "DeviceNumber": 1
+}

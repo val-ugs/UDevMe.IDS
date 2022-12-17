@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Configs\config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Logs\log.log">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
