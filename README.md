@@ -2,7 +2,7 @@
 
 Intelligent Detection System that allows you to detect network attacks.
 
-![alt text](https://github.com/val-ugs/UDevMe.IDS/blob/ugs_dev/UDeVMe_IDS.png?raw=true)
+![alt text](https://github.com/val-ugs/UDevMe.IDS/blob/Valugs/UDeVMe_IDS.png?raw=true)
 
 ## Content
 
@@ -12,7 +12,9 @@ Intelligent Detection System that allows you to detect network attacks.
 
 ## Modes
 <ol>
-  <li>Real-time attack detection.</li>
+  <li>Real-time attack detection (use config file)</li>
+  <li>Real-time attack detection (console input)</li>
+  <li>Create config file</li>
   <li>Checking the accuracy of algorithms based on a dataset of csv files</li>
   <li>Collecting traffic and creating a pcap file</li>
   <li>Creating a csv dataset from pcap files</li>
